@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.matheud.reletra"
+      "bundleIdentifier": "com.matheud.fynz"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +22,9 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.matheud.fynz",
-      "versionCode": 1
+      "versionCode": 1,
+      "softwareKeyboardLayoutMode": "pan",
+      "backgroundColor": "#121212"
     },
     "web": {
       "output": "static",
@@ -41,7 +43,8 @@
             "backgroundColor": "#000"
           }
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

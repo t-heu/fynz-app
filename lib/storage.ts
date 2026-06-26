@@ -152,28 +152,6 @@ export async function clearData() {
   )
 }
 
-let cacheUsuario: any = null
-
-export async function getDadosUsuario() {
-  if (cacheUsuario) return cacheUsuario
-
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
-
-  cacheUsuario = {
-    id: user?.id ?? '',
-    nome: user?.user_metadata?.name ?? 'Usuário',
-    avatarUrl: user?.user_metadata?.avatar_url ?? '',
-    email: user?.email ?? '',
-  }
-
-  return cacheUsuario
-}
-
-export async function obterUsuarioId() {
-  return (await getDadosUsuario()).id
-}
-
 // ============================================================================
 // Backup Nuvem (Supabase Storage)
 // ============================================================================
@@ -261,39 +239,82 @@ export async function fazerBackupNuvem(): Promise<void> {
   }
 }
 
-export async function restaurarBackupNuvem(): Promise<void | any> {
+let cacheUsuario: any = null
+
+export function limparCacheUsuario() {
+  cacheUsuario = null;
+}
+
+export async function getDadosUsuario() {
+  if (cacheUsuario) return cacheUsuario;
+
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
+
+  // Se não houver usuário, retorne um objeto padrão ou null, mas não quebre
+  if (!user) return { id: '', nome: 'Usuário', avatarUrl: '', email: '' };
+
+  cacheUsuario = {
+    id: user.id,
+    nome: user.user_metadata?.name ?? 'Usuário',
+    avatarUrl: user.user_metadata?.avatar_url ?? '',
+    email: user.email ?? '',
+  };
+
+  return cacheUsuario;
+}
+
+export async function obterUsuarioId() {
+  return (await getDadosUsuario()).id
+}
+
+export async function restaurarBackupNuvem(): Promise<AppData | null> {
   try {
-    const userId = await obterUsuarioId()
+    const userId = await obterUsuarioId();
+    if (!userId) return null; // Proteção extra
 
     const { data: arquivos, error: erroListagem } = await supabase.storage
       .from('backups')
-      .list(userId)
+      .list(userId);
 
-    if (erroListagem) return
+    if (erroListagem) {
+      console.error("Erro na listagem:", erroListagem);
+      return null; // Retorne explicitamente null
+    }
 
-    const existeBackup = arquivos?.some((arquivo) => arquivo.name === 'backup.json')
-    if (!existeBackup) return
+    const existeBackup = arquivos?.some((arquivo) => arquivo.name === 'backup.json');
+    if (!existeBackup) {
+      console.log("Nenhum backup encontrado.");
+      return null; // Retorne explicitamente null
+    }
 
     const { data, error } = await supabase.storage
       .from('backups')
-      .download(`${userId}/backup.json`)
+      .download(`${userId}/backup.json`);
 
-    if (error || !data) return
+    if (error || !data) {
+      console.error("Erro no download:", error);
+      return null; // Retorne explicitamente null
+    }
 
-    // Lê o conteúdo do Blob (no RN, usamos FileReader)
     const texto = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsText(data)
-    })
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsText(data);
+    });
 
-    if (!texto.trim()) return
-    const dadosRestaurados: AppData = JSON.parse(texto)
-    await salvarDados(dadosRestaurados)
-    return dadosRestaurados || null;
+    if (!texto || !texto.trim()) return null;
+
+    const dadosRestaurados: AppData = JSON.parse(texto);
+    
+    // Supondo que salvarDados seja uma função local de cache
+    await salvarDados(dadosRestaurados);
+    
+    return dadosRestaurados; // Retorna o objeto completo
   } catch (err) {
-    // Ignora silenciosamente
+    console.error("Erro crítico no backup:", err);
+    return null; // Garante que nunca retorne undefined
   }
 }
 

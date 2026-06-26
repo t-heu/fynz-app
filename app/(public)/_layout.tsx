@@ -1,14 +1,54 @@
-import { useAuth } from '@/hooks/use-auth'
-import { Redirect, Slot } from 'expo-router'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useFinance } from '@/contexts/FinanceContext';
+import { useAuth } from '@/hooks/use-auth';
+import { restaurarBackupNuvem } from '@/lib/storage';
+import { Redirect, Slot } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PublicLayout() {
-  const { user, loading } = useAuth()
+  const { user, loading } = useAuth();
+  const { setDados } = useFinance();
+  
+  // Estado para controlar se já terminamos de buscar os dados
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  if (loading) return null
+  useEffect(() => {
+    async function carregarDados() {
+      if (user && !dataLoaded && !isSyncing) {
+        setIsSyncing(true);
+        try {
+          const data = await restaurarBackupNuvem();
+          if (data) setDados(data);
+        } catch (err) {
+          console.error("Erro ao restaurar:", err);
+        } finally {
+          setDataLoaded(true);
+          setIsSyncing(false);
+        }
+      }
+    }
 
-  if (user) {
-    return <Redirect href="/(tabs)/dashboard" />
+    carregarDados();
+  }, [user]);
+
+  // 1. Enquanto o Auth está validando o token inicial, não faz nada
+  if (loading) return null;
+
+  // 2. Se o usuário estiver logado, mas ainda estamos baixando o backup, 
+  // mostra um loading para não redirecionar "vazio"
+  if (user && !dataLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  // 3. Se o usuário logou e os dados já foram carregados, redireciona
+  if (user && dataLoaded) {
+    return <Redirect href="/(tabs)/dashboard" />;
   }
 
   return (

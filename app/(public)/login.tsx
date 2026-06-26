@@ -1,330 +1,149 @@
 import { router } from 'expo-router';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
+import { ChevronLeft, Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
+  Dimensions,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
-import { useFinance } from '@/contexts/FinanceContext';
-import { login, restaurarBackupNuvem } from '@/lib/storage';
+import { limparCacheUsuario, login } from '@/lib/storage';
 
-// Simulação das variáveis CSS que você usava no Next.js
+const { width } = Dimensions.get('window');
+
+// Mantendo o estilo consistente com o HomePage
 const theme = {
-  background: '#121212', // var(--background)
-  card: '#1E1E1E',       // var(--card)
-  cardElevated: '#2C2C2C',// var(--card-elevated)
-  border: '#333333',     // var(--border)
-  primary: '#8a05be',    // var(--primary)
-  mutedForeground: '#A1A1AA', // var(--muted-foreground)
-  destructive: '#EF4444',// var(--destructive)
+  background: '#000000',
+  primary: '#8a05be',
   text: '#FFFFFF',
+  muted: '#888888',
+  inputBg: 'rgba(255, 255, 255, 0.05)',
+  border: 'rgba(255, 255, 255, 0.1)',
 };
 
 export default function LoginPage() {
-  const { setDados } = useFinance()
-
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
-  const [erro, setErro] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
   async function entrar() {
-    if (!email || !senha) {
-      setErro('Preencha todos os campos.');
-      return;
-    }
-
+    setLoading(true);
     try {
-      setLoading(true);
-      setErro('');
-      
-      // 1. Autenticação
-      setLoadingMessage('Autenticando...');
       await login({ email, senha });
-
-      // 2. Sincronização automática do backup
-      setLoadingMessage('Sincronizando seus dados...');
-      try {
-        const data = await restaurarBackupNuvem();
-        if (data) setDados(data)
-      } catch (backupError) {
-        // Ignoramos silenciosamente se não houver backup ou falhar
-      }
-
-      // 3. Redirecionamento
-      setLoadingMessage('Redirecionando...');
-      router.replace('/(tabs)/dashboard');
+      limparCacheUsuario();
     } catch (err: any) {
-      setErro(err.message || 'Erro ao realizar login');
       setLoading(false);
     }
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Efeito Glow igual ao HomePage */}
+      <View style={styles.glowTop} />
+
+      <KeyboardAwareScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.card}>
-          {/* LOGO */}
-          <View style={styles.logoContainer}>
-            <TouchableOpacity 
-              onPress={() => router.push('/')}
-              style={styles.logoWrapper}
-              activeOpacity={0.8}
-            >
-              <Image
-                source={require('@/assets/icon.png')} // Atualize o caminho para a sua imagem
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-          </View>
+        {/* Header com botão voltar minimalista */}
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <ChevronLeft color="#fff" size={24} />
+        </TouchableOpacity>
 
-          <Text style={styles.title}>Entrar</Text>
-          <Text style={styles.subtitle}>Controle suas finanças em um só lugar</Text>
+        {/* Branding (Igual ao HomePage) */}
+        <View style={styles.brandContainer}>
+          <Text style={styles.title}>Bem-vindo de{'\n'}volta.</Text>
+          <Text style={styles.subtitle}>Acesse sua conta para continuar gerenciando suas finanças.</Text>
+        </View>
 
-          {/* EMAIL */}
+        {/* Form Container (Estilo Glassmorphism) */}
+        <View style={styles.formContainer}>
           <View style={styles.inputContainer}>
-            <Mail size={18} color={theme.mutedForeground} />
+            <Mail size={20} color={theme.muted} />
             <TextInput
               style={styles.input}
-              placeholder="Digite seu e-mail"
-              placeholderTextColor={theme.mutedForeground}
+              placeholder="E-mail"
+              placeholderTextColor={theme.muted}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              autoCorrect={false}
-              editable={!loading}
             />
           </View>
 
-          {/* SENHA */}
           <View style={styles.inputContainer}>
-            <Lock size={18} color={theme.mutedForeground} />
+            <Lock size={20} color={theme.muted} />
             <TextInput
               style={styles.input}
-              placeholder="Digite sua senha"
-              placeholderTextColor={theme.mutedForeground}
+              placeholder="Senha"
+              placeholderTextColor={theme.muted}
               value={senha}
               onChangeText={setSenha}
               secureTextEntry={!mostrarSenha}
               autoCapitalize="none"
-              editable={!loading}
             />
-            <TouchableOpacity
-              onPress={() => setMostrarSenha(!mostrarSenha)}
-              style={styles.eyeButton}
-            >
-              {mostrarSenha ? (
-                <EyeOff size={18} color={theme.mutedForeground} />
-              ) : (
-                <Eye size={18} color={theme.mutedForeground} />
-              )}
+            <TouchableOpacity onPress={() => setMostrarSenha(!mostrarSenha)}>
+              {mostrarSenha ? <Eye size={20} color={theme.muted} /> : <EyeOff size={20} color={theme.muted} />}
             </TouchableOpacity>
           </View>
 
-          {/* ESQUECI A SENHA */}
-          <View style={styles.forgotPasswordContainer}>
-            <TouchableOpacity onPress={() => router.push('/esqueci-senha')}>
-              <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.forgotButton} onPress={() => router.push('/esqueci-senha')}>
+            <Text style={styles.forgotText}>Esqueci minha senha</Text>
+          </TouchableOpacity>
 
-          {/* ERRO */}
-          {!!erro && (
-            <Text style={styles.errorText}>{erro}</Text>
-          )}
-
-          {/* BOTÃO ENTRAR */}
-          <TouchableOpacity
-            onPress={entrar}
-            disabled={loading}
-            style={[styles.button, loading && styles.buttonDisabled]}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator color="#fff" size="small" />
-                <Text style={styles.buttonText}>{loadingMessage}</Text>
-              </View>
-            ) : (
-              <Text style={styles.buttonText}>Entrar</Text>
-            )}
+          <TouchableOpacity style={styles.primaryButton} onPress={entrar} disabled={loading}>
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>Entrar</Text>}
           </TouchableOpacity>
         </View>
 
-        {/* LINK CADASTRO */}
-        <View style={styles.registerContainer}>
-          <Text style={styles.registerText}>Não possui uma conta? </Text>
-          <TouchableOpacity onPress={() => router.push('/register')}>
-            <Text style={styles.registerLink}>Criar conta</Text>
-          </TouchableOpacity>
-        </View>
-        
-        {/* NOVOS LINKS: FAQ e TERMOS */}
-        <View style={styles.footerLinksContainer}>
-          <TouchableOpacity onPress={() => router.push('/login')}>
-            <Text style={styles.footerLink}>Perguntas Frequentes</Text>
-          </TouchableOpacity>
-          <Text style={styles.bulletPoint}> • </Text>
-          <TouchableOpacity onPress={() => router.push('/login')}>
-            <Text style={styles.footerLink}>Termos e Privacidade</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <TouchableOpacity style={styles.registerLink} onPress={() => router.push('/register')}>
+          <Text style={styles.registerText}>Não tem conta? <Text style={{ color: theme.primary, fontWeight: 'bold' }}>Cadastre-se</Text></Text>
+        </TouchableOpacity>
+      </KeyboardAwareScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.background,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 40,
-  },
-  card: {
-    backgroundColor: theme.card,
-    borderRadius: 24,
-    padding: 32,
-    borderWidth: 1,
-    borderColor: theme.border,
-    width: '100%',
-    maxWidth: 400,
+  container: { flex: 1, backgroundColor: theme.background },
+  glowTop: {
+    position: 'absolute',
+    top: '-10%',
     alignSelf: 'center',
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  logoWrapper: {
-    width: 80,
-    height: 80,
-    backgroundColor: theme.cardElevated,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    width: 50,
-    height: 50,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: theme.text,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: theme.mutedForeground,
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.background,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    height: 56,
-    marginBottom: 16,
-  },
-  input: {
-    flex: 1,
-    marginLeft: 12,
-    color: theme.text,
-    fontSize: 16,
-  },
-  eyeButton: {
-    padding: 4,
-  },
-  forgotPasswordContainer: {
-    alignItems: 'flex-end',
-    marginBottom: 16,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-    color: theme.primary,
-  },
-  errorText: {
-    fontSize: 14,
-    color: theme.destructive,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  button: {
+    width: width * 0.8,
+    height: width * 0.8,
     backgroundColor: theme.primary,
-    height: 56,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 999,
+    opacity: 0.15,
   },
-  buttonDisabled: {
-    opacity: 0.7,
+  scrollContainer: { flexGrow: 1, padding: 24, justifyContent: 'center' },
+  backButton: { marginBottom: 40, alignSelf: 'flex-start' },
+  brandContainer: { marginBottom: 40 },
+  title: { fontSize: 40, fontWeight: '900', color: theme.text, lineHeight: 45, letterSpacing: -1 },
+  subtitle: { fontSize: 16, color: theme.muted, marginTop: 12 },
+  formContainer: { gap: 16 },
+  inputContainer: { 
+    flexDirection: 'row', alignItems: 'center', 
+    backgroundColor: theme.inputBg, borderWidth: 1, borderColor: theme.border, 
+    borderRadius: 16, paddingHorizontal: 16, height: 60 
   },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8, // Nota: gap em flexDirection: 'row' funciona no RN 0.71+
+  input: { flex: 1, marginLeft: 12, color: '#fff', fontSize: 16 },
+  forgotButton: { alignSelf: 'flex-end', marginTop: 8 },
+  forgotText: { color: theme.muted, fontSize: 14 },
+  primaryButton: { 
+    backgroundColor: theme.primary, height: 60, borderRadius: 100, 
+    justifyContent: 'center', alignItems: 'center', marginTop: 16 
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 24,
-  },
-  registerText: {
-    fontSize: 14,
-    color: theme.mutedForeground,
-  },
-  registerLink: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.primary,
-  },
-  footerLinksContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 32,
-  },
-  footerLink: {
-    fontSize: 12,
-    color: theme.mutedForeground,
-  },
-  bulletPoint: {
-    fontSize: 12,
-    color: theme.mutedForeground,
-    marginHorizontal: 8,
-  },
+  primaryButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  registerLink: { alignItems: 'center', marginTop: 32 },
+  registerText: { color: theme.muted, fontSize: 16 }
 });

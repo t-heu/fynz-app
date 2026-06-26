@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   brandContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginLeft: 5,
     gap: 10,
     marginTop: 15, // Dá um respiro até o gráfico central
   },

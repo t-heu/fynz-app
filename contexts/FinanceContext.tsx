@@ -48,7 +48,13 @@ export function FinanceProvider({
 
         const data = await getDadosUsuario()
 
-        setNomeUsuario(data.nome)
+        // Adicione esta verificação de segurança
+        if (data) {
+          setNomeUsuario(data.nome);
+        } else {
+          // Se for null, defina um nome padrão ou trate o erro
+          setNomeUsuario('Usuário'); 
+        }
       } catch (err) {
         console.error(
           'Erro ao carregar dados:',

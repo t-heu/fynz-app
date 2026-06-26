@@ -6,9 +6,10 @@ import { bancos } from '@/lib/bancos';
 import { CATEGORIA_ICONS } from '@/lib/categoria-icons';
 import { COLORS } from "@/lib/colors";
 import { aplicarMascaraMoeda, dtISO, lerValorMoeda, processarSaldoConta } from '@/lib/finance-utils';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { ArrowRightLeft, Calendar, Check, CheckCircle2, ChevronRight, Landmark, Plus, ReceiptText, Repeat, Sigma, Tags, WalletCards, X } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Dimensions, Image, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, Image, Modal, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { FormCategoria } from './FormCategoria'; // Ajuste o path conforme sua estrutura
 
 interface Props {
@@ -48,6 +49,28 @@ export function FormLancamento({ open, onClose, editandoId }: Props) {
   const [editandoGrupoId, setEditandoGrupoId] = useState<number | undefined>()
   const [showFormCat, setShowFormCat] = useState(false)
   const [openDrawer, setOpenDrawer] = useState<'categoria' | 'fonte' | 'repeticao' | null>(null)
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Função para tratar a seleção da data
+  const handleDateChange = (event: any, selectedDate: any) => {
+    // No Android, o picker fecha sozinho ao selecionar, no iOS precisamos fechar
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    if (selectedDate) {
+      // Monta a data no formato YYYY-MM-DD
+      const ano = selectedDate.getFullYear();
+      const mes = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const dia = String(selectedDate.getDate()).padStart(2, '0');
+      setData(`${ano}-${mes}-${dia}`);
+    }
+
+    // Se fechar ou cancelar (iOS), fecha o modal
+    if (event.type === 'set' || event.type === 'dismissed') {
+      setShowDatePicker(false);
+    }
+  };
 
   // Listas Ordenadas
   const cats = useMemo(() => {
@@ -320,6 +343,8 @@ export function FormLancamento({ open, onClose, editandoId }: Props) {
                   placeholder="No que você gastou?"
                   placeholderTextColor={currentTheme.mutedForeground}
                   style={styles.descTextInput}
+                  multiline={true}
+                  textAlignVertical="top"
                 />
               </View>
             </View>
@@ -367,8 +392,8 @@ export function FormLancamento({ open, onClose, editandoId }: Props) {
                   </View>
                 </TouchableOpacity>
 
-                {/* INPUT DATA FORMATADA */}
-                <View style={styles.formRowItem}>
+                {/* INPUT DATA FORMATADA COM CALENDÁRIO */}
+                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.formRowItem}>
                   <View style={styles.rowItemLeft}>
                     <View style={styles.iconBox}>
                       <Calendar size={20} color={currentTheme.foreground} />
@@ -376,15 +401,22 @@ export function FormLancamento({ open, onClose, editandoId }: Props) {
                     <Text style={styles.rowItemLabel}>Data</Text>
                   </View>
                   <View style={styles.rowItemRight}>
-                    <TextInput
-                      value={data}
-                      onChangeText={setData}
-                      placeholder="YYYY-MM-DD"
-                      placeholderTextColor={currentTheme.mutedForeground}
-                      style={[styles.dateInputText, { color: currentTheme.primary }]}
-                    />
+                    <Text style={[styles.dateInputText, { color: currentTheme.primary }]}>
+                      {data || "Selecionar data"}
+                    </Text>
+                    <ChevronRight size={18} color={currentTheme.mutedForeground} />
                   </View>
-                </View>
+                </TouchableOpacity>
+
+                {/* MODAL NATIVO DO CALENDÁRIO */}
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={data ? new Date(data + 'T12:00:00') : new Date()} // T12 previne problemas de fuso horário
+                    mode="date"
+                    display="default" // No iOS você pode usar "spinner" ou "inline" se preferir
+                    onChange={handleDateChange}
+                  />
+                )}
 
                 {/* CONFIGURAÇÃO REPETIÇÃO */}
                 <TouchableOpacity onPress={() => setOpenDrawer('repeticao')} style={styles.formRowItem}>

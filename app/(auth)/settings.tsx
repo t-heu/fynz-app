@@ -51,6 +51,8 @@ export default function SettingsPage() {
   const isDark = colorScheme === 'dark'
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showResetDataModal, setShowResetDataModal] = useState(false);
+  const [showDeleteAccModal, setShowDeleteAccModal] = useState(false);
 
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
@@ -387,7 +389,7 @@ export default function SettingsPage() {
 
       <Section title="Privacidade e Dados">
         <Item title="Exportar meus dados" description="Baixar uma cópia em CSV" icon={<Download size={18} color={themeColors.text} />} onClick={exportarDadosCSV} />
-        <Item title="Excluir minha conta" description="Remove permanentemente sua conta" danger icon={<UserX size={18} color={themeColors.danger} />} onClick={excluirConta} />
+        <Item title="Excluir minha conta" description="Remove permanentemente sua conta" danger icon={<UserX size={18} color={themeColors.danger} />} onClick={() => setShowDeleteAccModal(true)} />
       </Section>
 
       <Section title="Suporte e Legal">
@@ -396,7 +398,7 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="Zona de perigo">
-        <Item title="Resetar dados" description="Apaga tudo permanentemente" danger icon={<Trash2 size={18} color={themeColors.danger} />} onClick={clearData} />
+        <Item title="Resetar dados" description="Apaga tudo permanentemente" danger icon={<Trash2 size={18} color={themeColors.danger} />} onClick={() => setShowResetDataModal(true)} />
         <Item title={loading ? 'Saindo...' : 'Sair da conta'} description="Desconectar do sistema" danger icon={<LogOut size={18} color={themeColors.danger} />} onClick={() => setShowLogoutModal(true)} />
       </Section>
 
@@ -408,6 +410,21 @@ export default function SettingsPage() {
         onConfirm={handleConfirmLogout}
       />
 
+      <ConfirmModal 
+        visible={showResetDataModal}
+        title="Atenção!"
+        message="Esta ação apagará todos os seus registros."
+        onCancel={() => setShowResetDataModal(false)}
+        onConfirm={clearData}
+      />
+
+      <ConfirmModal 
+        visible={showDeleteAccModal}
+        title="Excluir Conta"
+        message="Seu acesso será revogado e seus dados apagados. Se tem certeza?"
+        onCancel={() => setShowDeleteAccModal(false)}
+        onConfirm={excluirConta}
+      />
     </ScrollView>
   )
 }
