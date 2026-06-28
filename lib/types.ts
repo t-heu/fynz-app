@@ -74,18 +74,25 @@ export type RepFreq = 'Mensal' | 'Bimestral' | 'Trimestral' | 'Semestral' | 'Anu
 // banco de dados
 
 export interface Assinatura {
-  atualizado_em: string
-  criado_em: string
-  id: string
-  periodo_fim: string | null
-  plano_ativo: string
-  status: 'active' | 'trialing' | 'canceled' | 'past_due'
-  stripe_customer_id: string | null
-  stripe_price_id: string | null
-  stripe_subscription_id: string | null
-  cancel_at_period_end: boolean
-  trial_fim: string | null
-  cancel_at: string | null
+  atualizado_em: string;
+  criado_em: string;
+  id: string;
+  periodo_fim: string | null;
+  plano_ativo: "vitalicio" | "premium" | "free";
+  status:
+    | "active"
+    | "trialing"
+    | "past_due"
+    | "canceled"
+    | "incomplete"
+    | "incomplete_expired"
+    | "unpaid"
+    | "paused";
+  stripe_customer_id: string | null;
+  stripe_price_id: string | null;
+  stripe_subscription_id: string | null;
+  trial_fim: string | null;
+  cancel_at: string | null;
 }
 
 export interface LoginProps {

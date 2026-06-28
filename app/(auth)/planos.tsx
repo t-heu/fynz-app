@@ -25,9 +25,11 @@ import {
 } from 'react-native';
 
 interface DadosUsuario {
-  assinatura?: Assinatura
+  assinatura?: Assinatura | null
   plano: string
   statusPlano: string
+  possuiAcesso: boolean
+  trialExpirou: boolean
 }
 
 export default function PlanosPage() {
@@ -53,19 +55,12 @@ export default function PlanosPage() {
 
         if (!data) {
           setPlano(null)
+          setStatusPlano(false)
           return
         }
 
-        const agora = new Date()
-
-        const trialValido =
-          (data?.assinatura?.status === 'trialing' &&
-          data?.assinatura?.trial_fim !== null &&
-          new Date(data.assinatura.trial_fim) > agora) ||
-          data?.assinatura?.status === 'active'
-
         setPlano(data)
-        setStatusPlano(trialValido)
+        setStatusPlano(data.possuiAcesso)
       } catch (error) {
         console.error(error)
       } finally {

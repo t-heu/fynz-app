@@ -109,13 +109,8 @@ export default function SettingsPage() {
         }
 
         const assinatura = await getAssinaturaUsuario()
-        if (assinatura) {
-          setPlano(assinatura.plano)
-          setStatusPlano(assinatura.statusPlano)
-        } else {
-          setPlano('Gratuito')
-          setStatusPlano('Sem assinatura ativa')
-        }
+        setPlano(assinatura.plano)
+        setStatusPlano(assinatura.statusPlano)
 
         const savedTheme = await AsyncStorage.getItem('app-theme')
         if (savedTheme) {

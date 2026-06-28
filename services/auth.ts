@@ -1,34 +1,23 @@
 import { supabase } from '@/lib/supabase'
+import type { Assinatura } from '@/lib/types'
+import { getInfoAssinatura } from '@/lib/utils'
 
 export async function podeEntrar(userId: string) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('assinaturas')
-    .select('status, trial_fim')
+    .select('*')
     .eq('id', userId)
     .single()
 
-  const agora = new Date()
-
-  const trialValido =
-    data?.status === 'trialing' &&
-    data.trial_fim &&
-    new Date(data.trial_fim) > agora
-
-  const expirou =
-    data?.status === 'trialing' &&
-    data.trial_fim &&
-    new Date(data.trial_fim) <= agora
-
-  if (expirou) {
-    await supabase
-      .from('assinaturas')
-      .update({ status: 'inactive' })
-      .eq('id', userId)
+  if (error || !data) {
+    return false
   }
 
-  return (
-    data?.status === 'active' ||
-    data?.status === 'vitalicio' ||
-    trialValido
-  )
+  const info = getInfoAssinatura(data as Assinatura)
+
+  if (info.trialExpirou) {
+    return false
+  }
+
+  return info.possuiAcesso
 }

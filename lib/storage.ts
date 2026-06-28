@@ -5,9 +5,10 @@ import * as Sharing from 'expo-sharing'
 import { Alert, Platform } from 'react-native'
 
 import { PALETA } from '@/lib/colors'
-import { formatarData, validatePasswordStrength } from '@/lib/finance-utils'
+import { validatePasswordStrength } from '@/lib/finance-utils'
 import { supabase } from '@/lib/supabase'
 import { traduzirErroAuth } from '@/lib/traduzir-erro-auth'
+import { getInfoAssinatura } from "@/lib/utils"
 import type { AppData, Assinatura, Categoria, LoginProps, RegisterProps } from './types'
 
 const STORAGE_KEY = 'orgFinancasV8'
@@ -410,10 +411,18 @@ export async function changePassword(currentPassword: string, newPassword: strin
 }
 
 export async function getAssinaturaUsuario() {
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
-    return { plano: 'Plano Gratuito', statusPlano: 'Sem assinatura ativa' }
+    return {
+      plano: 'Plano Gratuito',
+      statusPlano: 'Sem assinatura ativa',
+      possuiAcesso: false,
+      trialExpirou: false,
+      assinatura: null,
+    }
   }
 
   const { data, error } = await supabase
@@ -423,34 +432,19 @@ export async function getAssinaturaUsuario() {
     .single()
 
   if (error || !data) {
-    return { plano: 'Plano Gratuito', statusPlano: 'Sem assinatura ativa' }
-  }
-
-  let plano = 'Plano Gratuito'
-  let statusPlano = 'Sem assinatura ativa'
-
-  // Variáveis do Expo devem usar EXPO_PUBLIC_
-  const mensal = process.env.EXPO_PUBLIC_STRIPE_PLAN_MENSAL
-  const semestral = process.env.EXPO_PUBLIC_STRIPE_PLAN_SEMESTRAL
-  const anual = process.env.EXPO_PUBLIC_STRIPE_PLAN_ANUAL
-
-  if (data.plano_ativo === 'vitalicio') {
-    plano = 'Plano Vitalício'
-    statusPlano = 'Acesso permanente'
-  } else if (data.status === 'trialing' || data.status === 'active') {
-    if (data.stripe_price_id === mensal) plano = 'Premium Mensal'
-    else if (data.stripe_price_id === semestral) plano = 'Premium Semestral'
-    else if (data.stripe_price_id === anual) plano = 'Premium Anual'
-    else plano = 'Plano Premium'
-
-    if (data.status === 'trialing') {
-      statusPlano = `Teste grátis até ${formatarData(data.trial_fim)}`
-    } else {
-      statusPlano = `Ativo até ${formatarData(data.periodo_fim)}`
+    return {
+      plano: 'Plano Gratuito',
+      statusPlano: 'Sem assinatura ativa',
+      possuiAcesso: false,
+      trialExpirou: false,
+      assinatura: null,
     }
   }
 
-  return { plano, statusPlano, assinatura: data as Assinatura }
+  return {
+    ...getInfoAssinatura(data as Assinatura),
+    assinatura: data as Assinatura,
+  }
 }
 
 export async function login({ email, senha }: LoginProps) {
