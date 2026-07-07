@@ -3,8 +3,8 @@ import React, { useState } from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { FormLancamento } from '@/components/FormLancamento'
 import LancamentoApp from '@/components/LancamentoApp'
-import { FormLancamento } from '@/components/finance/FormLancamento'
 
 export default function Page() {
   const [fabOpen, setFabOpen] = useState(false)

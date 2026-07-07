@@ -503,39 +503,65 @@ export async function updatePassword(senha: string) {
 }
 
 export async function excluirConta() {
-  Alert.alert(
-    'Atenção',
-    'Todos os dados da sua conta serão apagados e não poderão ser recuperados. Continuar?',
-    [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Apagar',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const userId = await obterUsuarioId()
-            
-            // Certifique-se de que a variável abaixo aponta para a URL real do seu backend web
-            // Já que a API route do Next.js não roda localmente no celular
-            const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://seu-site.com'
-            
-            const res = await fetch(`${apiUrl}/api/delete-account`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId }),
-            })
+  try {
+    // 1. Obtém o ID do usuário
+    const userId = await obterUsuarioId();
+    if (!userId) throw new Error("Usuário não identificado.");
 
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error)
+    // 2. Busca o status da assinatura antes de permitir a exclusão
+    const { data: assinatura, error: assinaturaError } = await supabase
+      .from('assinaturas')
+      .select('status, plano_ativo')
+      .eq('id', userId)
+      .maybeSingle();
 
-            await logout(true)
-          } catch (err: any) {
-            Alert.alert('Erro', err.message || 'Erro ao excluir conta.')
+    if (assinaturaError) throw new Error("Erro ao verificar status da assinatura.");
+
+    // 3. Define se o usuário tem um plano ativo
+    // (Ajuste os valores 'active' ou 'trialing' conforme o seu banco de dados)
+    const temPlanoAtivo = assinatura && (assinatura.status === 'active' || assinatura.status === 'past_due' || assinatura.plano_ativo === 'vitalicio');
+
+    if (temPlanoAtivo) {
+      Alert.alert(
+        'Atenção',
+        'Você possui uma assinatura ativa. Para excluir sua conta, você deve cancelar sua assinatura no portal de pagamentos primeiro.',
+        [{ text: 'Entendido', style: 'default' }]
+      );
+      return;
+    }
+
+    // 4. Se não tem plano ativo, prossegue com o alerta de exclusão
+    Alert.alert(
+      'Atenção',
+      'Todos os dados da sua conta serão apagados e não poderão ser recuperados. Continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Apagar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://fynz.dev.br/';
+              const res = await fetch(`${apiUrl}/api/delete-account`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId }),
+              });
+
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error);
+
+              await logout(true);
+            } catch (err: any) {
+              Alert.alert('Erro', err.message || 'Erro ao excluir conta.');
+            }
           }
         }
-      }
-    ]
-  )
+      ]
+    );
+  } catch (err: any) {
+    Alert.alert('Erro', err.message || 'Não foi possível verificar seu status.');
+  }
 }
 
 export async function exportarDadosCSV() {

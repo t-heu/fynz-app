@@ -1,4 +1,4 @@
-import { FormLancamento } from '@/components/finance/FormLancamento'
+import { FormLancamento } from '@/components/FormLancamento'
 import { useFinance } from '@/contexts/FinanceContext'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { CATEGORIA_ICONS } from '@/lib/categoria-icons'
@@ -367,7 +367,7 @@ export default function TabLancamentos({ abrirLancamento, onAbrirLancamentoClear
                   const isReceita = l.tipo === 'Receita'
                   const sinal = isReceita ? '+' : '-'
                   const corValor = isReceita ? '#22C55E' : '#EF4444'
-                  const destacado = dt === hoje && !l.pago
+                  const destacado = dt <= hoje && !l.pago
 
                   const parcela = (l.descricao || '').match(/\((\d+)\/(\d+)\)/)
                   const isRecorrente = (l.descricao || '').includes('recurrence')

@@ -1,6 +1,6 @@
+import { ModalDetalheCartao } from '@/components/ModalDetalheCartao';
 import { HomeHeader } from '@/components/finance/HomeHeader';
-import { ModalDetalheCartao } from '@/components/finance/ModalDetalheCartao';
-import { ModalGerenciar } from '@/components/finance/ModalGerenciar';
+import { ModalGerenciar } from '@/components/ui/ModalGerenciar';
 import { APP_URL } from '@/constants/vars'; // Assumindo que você usa isso para as URLs das imagens
 import { useFinance } from '@/contexts/FinanceContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';

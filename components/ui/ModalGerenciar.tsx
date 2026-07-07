@@ -16,8 +16,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
-import { ModalFullscreen } from '../ui/ModalFullscreen'
-import { FormCategoria } from './FormCategoria'
+import { FormCategoria } from '../finance/FormCategoria'
+import { ModalFullscreen } from './ModalFullscreen'
 
 type GerenciarTipo = 'Contas' | 'Cartões' | 'Categorias'
 
