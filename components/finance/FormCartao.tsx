@@ -1,14 +1,13 @@
+import { ModalManual } from '@/components/ui/ModalManual'
 import { APP_URL } from "@/constants/vars"
 import { useFinance } from '@/contexts/FinanceContext'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { bancos } from '@/lib/bancos'
 import { COLORS } from "@/lib/colors"
 import { aplicarMascaraMoeda, fm, lerValorMoeda } from '@/lib/finance-utils'
-import { ChevronLeft, CreditCard } from 'lucide-react-native'; // Adicionado ChevronLeft
+import { ChevronLeft, CreditCard } from 'lucide-react-native'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-// Importe o componente que criamos juntos:
-import { ModalManual } from '@/components/ui/ModalManual'
 
 export function FormCartao({ open, onClose, editando, onSaved }: any) {
   const { dados, salvar } = useFinance()

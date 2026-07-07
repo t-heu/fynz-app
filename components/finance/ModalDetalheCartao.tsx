@@ -1,3 +1,4 @@
+import { ModalManual } from '@/components/ui/ModalManual'
 import { APP_URL } from "@/constants/vars"
 import { useFinance } from '@/contexts/FinanceContext'
 import { useColorScheme } from '@/hooks/use-color-scheme'
@@ -7,7 +8,6 @@ import { aplicarMascaraMoeda, dtISO, fm, lerValorMoeda, MESES, processarSaldoCon
 import { AlertCircle, Building2, CheckCircle2, ChevronLeft, ChevronRight, Circle, CreditCard, Eye, EyeOff, Star } from 'lucide-react-native'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Alert, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-
 import { FormLancamento } from './FormLancamento'
 
 interface Props {
@@ -448,142 +448,167 @@ export function ModalDetalheCartao({ cartao, onClose }: Props) {
             </View>
           </ScrollView>
         </View>
-      </Modal>
 
-      {/* BOTTOM SHEET - PAGAMENTO */}
-      <Modal presentationStyle="pageSheet" visible={showPagar} animationType="slide">
-        <View style={styles.bottomSheetWrapper}>
-          <View style={styles.bottomSheetContent}>
-            
-            <View style={styles.sheetHeader}>
-              <TouchableOpacity onPress={() => setShowPagar(false)}>
-                <ChevronLeft size={24} color={currentTheme.foreground} />
-              </TouchableOpacity>
-              <Text style={styles.sheetHeaderTitle}>Resumo da Fatura</Text>
-              <TouchableOpacity onPress={handleConfirmarClick}>
-                <Text style={styles.sheetConfirmBtn}>Confirmar</Text>
-              </TouchableOpacity>
-            </View>
+        {/* BOTTOM SHEET - PAGAMENTO */}
+        <ModalManual
+          open={showPagar}
+          // Se estiver escolhendo o logo, o voltar fecha apenas a seleção. Se não, fecha o fluxo todo.
+          onClose={onClose}
+          title={'Resumo da Fatura'}
+          headerLeft={
+            <TouchableOpacity onPress={() => setShowPagar(false)}>
+              <ChevronLeft size={24} color={currentTheme.foreground} />
+            </TouchableOpacity>
+          }
+          headerRight={
+            <TouchableOpacity onPress={handleConfirmarClick}>
+              <Text style={styles.sheetConfirmBtn}>Confirmar</Text>
+            </TouchableOpacity>
+          }
+        >
+          <View style={styles.bottomSheetWrapper}>
+            <View style={styles.bottomSheetContent}>
 
-            <View style={styles.sheetActionsRow}>
-              <Text style={styles.sheetSubtitle}>Gastos pendentes ({despesasAbertas.length})</Text>
-              <TouchableOpacity onPress={() => setItensSelecionados(itensSelecionados.length === despesasAbertas.length ? [] : despesasAbertas.map((d: any)=>d.id))}>
-                <Text style={styles.sheetToggleAllBtn}>
-                  {itensSelecionados.length === despesasAbertas.length ? 'Desmarcar Tudo' : 'Quitar Tudo'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.sheetActionsRow}>
+                <Text style={styles.sheetSubtitle}>Gastos pendentes ({despesasAbertas.length})</Text>
+                <TouchableOpacity onPress={() => setItensSelecionados(itensSelecionados.length === despesasAbertas.length ? [] : despesasAbertas.map((d: any)=>d.id))}>
+                  <Text style={styles.sheetToggleAllBtn}>
+                    {itensSelecionados.length === despesasAbertas.length ? 'Desmarcar Tudo' : 'Quitar Tudo'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
-            <ScrollView style={styles.sheetList} contentContainerStyle={{ paddingBottom: 20 }}>
-              {despesasAbertas.map((l: any) => {
-                const isSelected = itensSelecionados.includes(l.id)
-                return (
-                  <TouchableOpacity 
-                    key={l.id} 
-                    onPress={() => toggleItem(l.id)}
-                    activeOpacity={0.7}
-                    style={[styles.sheetItemCard, isSelected && { borderColor: currentTheme.primary, backgroundColor: 'rgba(var(--primary-rgb), 0.05)' }]}
-                  >
-                    <View style={styles.sheetItemRow}>
-                      <View style={[styles.checkboxIcon, isSelected && { borderColor: currentTheme.primary, backgroundColor: currentTheme.primary }]}>
-                        {isSelected && <CheckCircle2 size={12} color="#fff" strokeWidth={3} />}
+              <ScrollView style={styles.sheetList} contentContainerStyle={{ paddingBottom: 20 }}>
+                {despesasAbertas.map((l: any) => {
+                  const isSelected = itensSelecionados.includes(l.id)
+                  return (
+                    <TouchableOpacity 
+                      key={l.id} 
+                      onPress={() => toggleItem(l.id)}
+                      activeOpacity={0.7}
+                      style={[styles.sheetItemCard, isSelected && { borderColor: currentTheme.primary, backgroundColor: 'rgba(var(--primary-rgb), 0.05)' }]}
+                    >
+                      <View style={styles.sheetItemRow}>
+                        <View style={[styles.checkboxIcon, isSelected && { borderColor: currentTheme.primary, backgroundColor: currentTheme.primary }]}>
+                          {isSelected && <CheckCircle2 size={12} color="#fff" strokeWidth={3} />}
+                        </View>
+                        <Text numberOfLines={1} style={styles.sheetItemTitle}>
+                          {(l.descricao || '').replace(/\(\d+\/\d+\)/g, '').replace(/recurrence/g, '').replace(/\(Antecipado\)/g, '').trim()}
+                        </Text>
                       </View>
-                      <Text numberOfLines={1} style={styles.sheetItemTitle}>
-                        {(l.descricao || '').replace(/\(\d+\/\d+\)/g, '').replace(/recurrence/g, '').replace(/\(Antecipado\)/g, '').trim()}
-                      </Text>
-                    </View>
-                    <Text style={styles.sheetItemValue}>R$ {fm(l.valor)}</Text>
-                  </TouchableOpacity>
-                )
-              })}
-            </ScrollView>
+                      <Text style={styles.sheetItemValue}>R$ {fm(l.valor)}</Text>
+                    </TouchableOpacity>
+                  )
+                })}
+              </ScrollView>
 
-            <View style={styles.sheetFooter}>
-              <View style={[styles.sheetFooterRow, { borderBottomWidth: 0, paddingBottom: 0, marginBottom: 0 }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.sheetFooterLabel}>Sairá de (Toque para trocar):</Text>
-                  
-                  <TouchableOpacity onPress={alternarConta} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                    <Text style={styles.sheetFooterAccountName}>{fonteSelecionada?.nome || 'Selecione'}</Text>
-                    <View style={styles.accountIconCircle}>
-                      {fonteSelecionada?.icone ? (
-                        <Image source={{ uri: fonteSelecionada.icone.includes('http') ? fonteSelecionada.icone : APP_URL + fonteSelecionada.icone }} style={{width: 24, height: 24}} resizeMode="contain" />
-                      ) : (
-                        <Building2 size={18} color={currentTheme.mutedForeground} />
-                      )}
-                    </View>
-                  </TouchableOpacity>
+              <View style={styles.sheetFooter}>
+                <View style={[styles.sheetFooterRow, { borderBottomWidth: 0, paddingBottom: 0, marginBottom: 0 }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.sheetFooterLabel}>Sairá de (Toque para trocar):</Text>
+                    
+                    <TouchableOpacity onPress={alternarConta} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                      <Text style={styles.sheetFooterAccountName}>{fonteSelecionada?.nome || 'Selecione'}</Text>
+                      <View style={styles.accountIconCircle}>
+                        {fonteSelecionada?.icone ? (
+                          <Image source={{ uri: fonteSelecionada.icone.includes('http') ? fonteSelecionada.icone : APP_URL + fonteSelecionada.icone }} style={{width: 24, height: 24}} resizeMode="contain" />
+                        ) : (
+                          <Building2 size={18} color={currentTheme.mutedForeground} />
+                        )}
+                      </View>
+                    </TouchableOpacity>
 
-                  {/* VISUALIZAÇÃO DO SALDO/LIMITE DA FONTE SELECIONADA */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.05)', borderWidth: 1, borderColor: currentTheme.border, marginBottom: 16 }}>
-                    <Text style={{ fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', color: currentTheme.mutedForeground }}>{labelSaldo}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Text style={{ fontSize: 14, fontWeight: 'bold', color: currentTheme.foreground }}>
-                        {showSaldo ? `R$ ${fm(saldoVisivel)}` : 'R$ •••••'}
-                      </Text>
-                      <TouchableOpacity onPress={() => setShowSaldo(!showSaldo)}>
-                        {showSaldo ? <EyeOff size={16} color={currentTheme.mutedForeground} /> : <Eye size={16} color={currentTheme.mutedForeground} />}
-                      </TouchableOpacity>
+                    {/* VISUALIZAÇÃO DO SALDO/LIMITE DA FONTE SELECIONADA */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.05)', borderWidth: 1, borderColor: currentTheme.border, marginBottom: 16 }}>
+                      <Text style={{ fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', color: currentTheme.mutedForeground }}>{labelSaldo}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: currentTheme.foreground }}>
+                          {showSaldo ? `R$ ${fm(saldoVisivel)}` : 'R$ •••••'}
+                        </Text>
+                        <TouchableOpacity onPress={() => setShowSaldo(!showSaldo)}>
+                          {showSaldo ? <EyeOff size={16} color={currentTheme.mutedForeground} /> : <Eye size={16} color={currentTheme.mutedForeground} />}
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </View>
                 </View>
-              </View>
-              
-              <View style={{ alignItems: 'flex-start', borderTopWidth: 1, borderTopColor: currentTheme.border, paddingTop: 16 }}>
-                <Text style={styles.sheetFooterLabel}>Total a Quitar (Editável):</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={styles.sheetTotalValue}>R$</Text>
-                  <TextInput
-                    style={[styles.sheetTotalValue, { padding: 0, margin: 0, height: 'auto', minWidth: 100 }]}
-                    value={valorPersonalizado}
-                    onChangeText={(t) => setValorPersonalizado(aplicarMascaraMoeda(t))}
-                    keyboardType="numeric"
-                  />
+                
+                <View style={{ alignItems: 'flex-start', borderTopWidth: 1, borderTopColor: currentTheme.border, paddingTop: 16 }}>
+                  <Text style={styles.sheetFooterLabel}>Total a Quitar (Editável):</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.sheetTotalValue}>R$</Text>
+                    <TextInput
+                      style={[styles.sheetTotalValue, { padding: 0, margin: 0, height: 'auto', minWidth: 100 }]}
+                      value={valorPersonalizado}
+                      onChangeText={(t) => setValorPersonalizado(aplicarMascaraMoeda(t))}
+                      keyboardType="numeric"
+                    />
+                  </View>
                 </View>
               </View>
+
             </View>
-
           </View>
-        </View>
-      </Modal>
+        </ModalManual>
 
-      {/* POP-UP DE CONFIRMAÇÃO (UNIVERSAL: NORMAL OU ANTECIPAÇÃO) */}
-      <Modal presentationStyle="pageSheet" visible={showConfirmacaoDate} animationType="fade">
-        <View style={styles.alertOverlay}>
-          <View style={styles.alertBox}>
-            <View style={styles.alertIconCircle}>
-               {isAntecipacaoMode 
-                  ? <AlertCircle size={24} color={currentTheme.primary} /> 
-                  : <CheckCircle2 size={24} color={currentTheme.primary} />}
+        {/* POP-UP DE CONFIRMAÇÃO (UNIVERSAL: NORMAL OU ANTECIPAÇÃO) */}
+        <ModalManual
+          open={showConfirmacaoDate}
+          onClose={() => setShowConfirmacaoDate(false)}
+          title={isAntecipacaoMode ? 'Antecipação de Gastos' : 'Confirmar Pagamento'}
+          headerLeft={
+            <TouchableOpacity onPress={() => setShowConfirmacaoDate(false)}>
+              <ChevronLeft size={24} color={currentTheme.foreground} />
+            </TouchableOpacity>
+          }
+        >
+          <View style={styles.bottomSheetWrapper}>
+            <View style={styles.bottomSheetContent}>
+              
+              {/* Ícone e Mensagem de Confirmação */}
+              <View style={{ alignItems: 'center', marginBottom: 20 }}>
+                <View style={styles.alertIconCircle}>
+                  {isAntecipacaoMode 
+                    ? <AlertCircle size={24} color={currentTheme.primary} /> 
+                    : <CheckCircle2 size={24} color={currentTheme.primary} />}
+                </View>
+                
+                <Text style={[styles.alertDescription, { textAlign: 'center', marginTop: 16 }]}>
+                  {isAntecipacaoMode 
+                    ? `Você selecionou ${itensSelecionados.length} gasto(s) de uma fatura futura para quitar. Eles receberão o selo de "Antecipado" e serão movidos para a data abaixo:`
+                    : `Você está pagando ${itensSelecionados.length} gasto(s) debitando um total de R$ ${valorPersonalizado}. Confirme ou altere a data de pagamento abaixo:`
+                  }
+                </Text>
+              </View>
+              
+              <TextInput
+                style={[styles.alertInput, { marginBottom: 24 }]}
+                value={dataPagamento}
+                onChangeText={setDataPagamento}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={currentTheme.mutedForeground}
+              />
+
+              {/* Botões de Ação Inferiores (Mantidos do seu código original) */}
+              <TouchableOpacity 
+                style={styles.alertPrimaryBtn} 
+                onPress={() => executarPagamento(dataPagamento, isAntecipacaoMode)}
+              >
+                <Text style={styles.alertPrimaryText}>
+                  {isAntecipacaoMode ? 'Sim, confirmar antecipação' : 'Confirmar pagamento'}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.alertSecondaryBtn} 
+                onPress={() => setShowConfirmacaoDate(false)}
+              >
+                <Text style={styles.alertSecondaryText}>Cancelar</Text>
+              </TouchableOpacity>
+
             </View>
-            <Text style={styles.alertTitle}>
-              {isAntecipacaoMode ? 'Antecipação de Gastos' : 'Confirmar Pagamento'}
-            </Text>
-            <Text style={styles.alertDescription}>
-              {isAntecipacaoMode 
-                ? `Você selecionou ${itensSelecionados.length} gasto(s) de uma fatura futura para quitar. Eles receberão o selo de "Antecipado" e serão movidos para a data abaixo:`
-                : `Você está pagando ${itensSelecionados.length} gasto(s) debitando um total de R$ ${valorPersonalizado}. Confirme ou altere a data de pagamento abaixo:`
-              }
-            </Text>
-            
-            <TextInput
-               style={styles.alertInput}
-               value={dataPagamento}
-               onChangeText={setDataPagamento}
-               placeholder="YYYY-MM-DD"
-               placeholderTextColor={currentTheme.mutedForeground}
-            />
-
-            <TouchableOpacity style={styles.alertPrimaryBtn} onPress={() => executarPagamento(dataPagamento, isAntecipacaoMode)}>
-              <Text style={styles.alertPrimaryText}>
-                {isAntecipacaoMode ? 'Sim, confirmar antecipação' : 'Confirmar pagamento'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.alertSecondaryBtn} onPress={() => setShowConfirmacaoDate(false)}>
-              <Text style={styles.alertSecondaryText}>Cancelar</Text>
-            </TouchableOpacity>
           </View>
-        </View>
+        </ModalManual>
       </Modal>
 
       <FormLancamento
@@ -856,7 +881,8 @@ const getStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.background,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    height: '85%',
+    //height: '85%',
+    padding: 20
   },
   sheetHeader: {
     flexDirection: 'row',

@@ -1,3 +1,4 @@
+import { ModalManual } from '@/components/ui/ModalManual'
 import { APP_URL } from "@/constants/vars"
 import { useFinance } from '@/contexts/FinanceContext'
 import { useColorScheme } from '@/hooks/use-color-scheme'
@@ -7,8 +8,6 @@ import { aplicarMascaraMoeda, fm, lerValorMoeda } from '@/lib/finance-utils'
 import { Building2, Check, ChevronLeft, Pencil, Plus, Search, Trash2 } from 'lucide-react-native'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-// Importe o componente que criamos juntos:
-import { ModalManual } from '@/components/ui/ModalManual'
 
 interface Props {
   open: boolean
