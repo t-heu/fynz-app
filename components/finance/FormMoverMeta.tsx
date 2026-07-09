@@ -5,7 +5,9 @@ import { COLORS } from '@/lib/colors'
 import { aplicarMascaraMoeda, dtISO, fm, lerValorMoeda, processarSaldoConta } from '@/lib/finance-utils'
 import { ArrowDown, ArrowDownRight, ArrowUpRight, Building2, Target } from 'lucide-react-native'
 import React, { useEffect, useMemo, useState } from 'react'
-import { Alert, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+
+import { ModalFullscreen } from '../ui/ModalFullscreen'
 
 interface MovMetaProps {
   open: boolean
@@ -81,20 +83,18 @@ export function FormMoverMeta({ open, onClose, meta, tipoInicial = 'Guardar' }: 
   const corAcao = tipo === 'Guardar' ? currentTheme.success : currentTheme.destructive
 
   return (
-    <Modal presentationStyle="pageSheet" visible={open} animationType="slide" onRequestClose={onClose}>
+    <ModalFullscreen
+      open={open}
+      onClose={onClose}
+      title={"Movimentar"}
+      backIcon
+      rightAction={
+        <TouchableOpacity onPress={salvar_}>
+          <Text style={styles.confirmBtn}>Confirmar</Text>
+        </TouchableOpacity>
+      }
+    >
       <View style={styles.container}>
-        
-        {/* Header Customizado */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.cancelBtn}>Cancelar</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Movimentar</Text>
-          <TouchableOpacity onPress={salvar_}>
-            <Text style={styles.confirmBtn}>Confirmar</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Content Area */}
         <ScrollView contentContainerStyle={styles.scrollContent}>
           
@@ -219,24 +219,12 @@ export function FormMoverMeta({ open, onClose, meta, tipoInicial = 'Guardar' }: 
 
         </ScrollView>
       </View>
-    </Modal>
+    </ModalFullscreen>
   )
 }
 
 const getStyles = (theme: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border
-  },
-  cancelBtn: { color: theme.mutedForeground, fontSize: 16 },
-  title: { fontSize: 18, fontWeight: 'bold', color: theme.foreground },
   confirmBtn: { color: theme.primary, fontSize: 16, fontWeight: '700' },
 
   scrollContent: { flexGrow: 1, paddingVertical: 20 },

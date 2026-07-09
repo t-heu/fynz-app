@@ -1,7 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Calendar, CheckCircle2, ChevronRight, Eye, EyeOff, ReceiptText, Repeat, Sigma, WalletCards, X } from 'lucide-react-native';
+import { Calendar, CheckCircle2, ChevronRight, Eye, EyeOff, ReceiptText, Repeat, Sigma, WalletCards } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { Dimensions, Image, Modal, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import { APP_URL } from "@/constants/vars";
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -13,6 +13,7 @@ import { FormCategoria } from '../finance/FormCategoria'; // Ajuste seu path se 
 
 // Novos Componentes e Hooks Refatorados
 import { useFormLancamento } from '../../hooks/use-form-lancamento';
+import { ModalFullscreen } from "../ui/ModalFullscreen"; // Certifique-se de que este import está correto
 import { ModalAlertaRepeticao } from './ModalAlertaRepeticao';
 import { SheetSeletoresLancamento } from './SheetSeletoresLancamento';
 
@@ -51,19 +52,18 @@ export function FormLancamento({ open, onClose, editandoId }: Props) {
 
   return (
     <>
-      <Modal presentationStyle="pageSheet" visible={open} animationType="slide" onRequestClose={onClose}>
+      <ModalFullscreen
+        open={open}
+        onClose={onClose}
+        title={editandoId ? "Editar Lançamento" : "Novo Lançamento"}
+        backIcon
+        rightAction={
+          <TouchableOpacity onPress={actions.salvarLancamento} style={styles.saveBtn}>
+            <Text style={styles.saveBtnText}>Salvar</Text>
+          </TouchableOpacity>
+        }
+      >
         <View style={styles.container}>
-          
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <X size={24} color={currentTheme.foreground} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{editandoId ? "Editar Lançamento" : "Novo Lançamento"}</Text>
-            <TouchableOpacity onPress={actions.salvarLancamento} style={styles.saveBtn}>
-              <Text style={styles.saveBtnText}>Salvar</Text>
-            </TouchableOpacity>
-          </View>
-
           <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
             <View style={[styles.heroSection, { backgroundColor: computed.isDespesa ? 'rgba(239, 68, 68, 0.08)' : 'rgba(34, 197, 94, 0.08)' }]}>
               
@@ -214,7 +214,7 @@ export function FormLancamento({ open, onClose, editandoId }: Props) {
           onConfirm={(aplicarProx: boolean) => actions.finalizarSalvar(aplicarProx)} 
           currentTheme={currentTheme} styles={styles} 
         />
-      </Modal>
+      </ModalFullscreen>
 
       <FormCategoria open={showFormCat} onClose={() => setShowFormCat(false)} defaultTipo={states.tipo} onSaved={(c: any) => { setters.setCategoriaId(String(c.id)); setShowFormCat(false); }} />
     </>
@@ -227,25 +227,6 @@ const getStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.background,
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: theme.foreground,
   },
   saveBtn: {
     backgroundColor: theme.primary,

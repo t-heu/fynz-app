@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 interface ModalFullscreenProps {
   open: boolean
@@ -37,11 +38,12 @@ export function ModalFullscreen({
   if (!open) return null
 
   const content = (
-    <View
+    <SafeAreaView
       style={[
         styles.container,
         variant === 'sheet' && styles.sheetContainer,
       ]}
+      edges={['top']}
     >
       <View style={styles.header}>
         <TouchableOpacity
@@ -79,7 +81,7 @@ export function ModalFullscreen({
       <View style={styles.body}>
         {children}
       </View>
-    </View>
+    </SafeAreaView>
   )
 
   if (variant === 'sheet') {
@@ -138,7 +140,8 @@ const getStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderColor: theme.border,
     backgroundColor: theme.background,

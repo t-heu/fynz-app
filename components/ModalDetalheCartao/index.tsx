@@ -6,7 +6,9 @@ import { COLORS } from "@/lib/colors"
 import { fm, MESES } from '@/lib/finance-utils'
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Circle, CreditCard, Star } from 'lucide-react-native'
 import React, { useState } from 'react'
-import { Alert, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+
+import { ModalFullscreen } from '../ui/ModalFullscreen'
 
 // Modais e Hooks Externos
 import { useCartaoFatura } from '../../hooks/use-cartao-fatura'
@@ -84,17 +86,13 @@ export function ModalDetalheCartao({ cartao, onClose }: Props) {
 
   return (
     <>
-      <Modal presentationStyle="pageSheet" animationType="slide" onRequestClose={onClose}>
+      <ModalFullscreen
+        open={true}
+        onClose={onClose}
+        title={"Gestão de Cartão"}
+        backIcon
+      >
         <View style={styles.container}>
-          
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} style={styles.backBtnRow}>
-              <ChevronLeft size={24} color={currentTheme.foreground} />
-              <Text style={styles.headerTitle}>Gestão de Cartão</Text>
-            </TouchableOpacity>
-            <View style={{ width: 24 }} />
-          </View>
-
           <ScrollView contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 20 }}>
             
             <View style={styles.calendarNavContainer}>
@@ -292,8 +290,7 @@ export function ModalDetalheCartao({ cartao, onClose }: Props) {
           valorPersonalizado={dadosPrePagamento?.valorPersonalizado || '0,00'}
           onConfirmar={confirmarPagamentoFinal}
         />
-
-      </Modal>
+      </ModalFullscreen>
 
       <FormLancamento
         open={editandoId !== null}
@@ -306,9 +303,6 @@ export function ModalDetalheCartao({ cartao, onClose }: Props) {
 
 const getStyles = (theme: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
-  backBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: theme.foreground },
   calendarNavContainer: { paddingTop: 10, paddingBottom: 20 },
   calendarNavBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: theme.card, borderRadius: 16, padding: 6 },
   navArrow: { padding: 8, borderRadius: 12 },

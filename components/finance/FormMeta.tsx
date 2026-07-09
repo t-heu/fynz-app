@@ -5,7 +5,8 @@ import { COLORS } from "@/lib/colors"
 import { aplicarMascaraMoeda, dtISO, fm, lerValorMoeda } from '@/lib/finance-utils'
 import { Building2, Calendar, Check, ChevronDown, ChevronLeft, Target, Wallet } from 'lucide-react-native'
 import React, { useEffect, useMemo, useState } from 'react'
-import { Alert, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ModalFullscreen } from '../ui/ModalFullscreen'
 
 interface Props {
   open: boolean
@@ -145,20 +146,18 @@ export function FormMeta({ open, onClose, editando, onSaved }: Props) {
   }
 
   return (
-    <Modal presentationStyle="pageSheet" visible={open} animationType="slide" onRequestClose={onClose}>
+    <ModalFullscreen
+      open={open}
+      onClose={onClose}
+      title={editando ? "Gerenciar Meta" : "Nova Meta"}
+      backIcon
+      rightAction={
+        <TouchableOpacity onPress={salvarMeta}>
+          <Text style={styles.saveBtn}>Salvar</Text>
+        </TouchableOpacity>
+      }
+    >
       <View style={styles.container}>
-        
-        {/* Header Principal */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.cancelBtn}>Cancelar</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>{editando ? "Gerenciar Meta" : "Nova Meta"}</Text>
-          <TouchableOpacity onPress={salvarMeta}>
-            <Text style={styles.saveBtn}>Salvar</Text>
-          </TouchableOpacity>
-        </View>
-
         <ScrollView contentContainerStyle={styles.scrollContent}>
           
           {/* Ícone Hero Centralizado */}
@@ -297,7 +296,7 @@ export function FormMeta({ open, onClose, editando, onSaved }: Props) {
           </View>
         )}
       </View>
-    </Modal>
+    </ModalFullscreen>
   )
 }
 
