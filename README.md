@@ -1,45 +1,197 @@
-# Welcome to your Expo app 👋
+# 🚀 Fynz - Gerenciador Financeiro
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+O **Fynz** é uma aplicação completa de gestão financeira pessoal, desenvolvida com **Expo**, **React Native** e **Supabase**, focada em performance, segurança e uma experiência de usuário fluida.
 
-## Get started
+## 🛠 Tecnologias Principais
 
-1. Install dependencies
+- **Framework:** Expo (React Native)
+- **Roteamento:** Expo Router
+- **Backend/DB:** Supabase (Auth, Storage & Database)
+- **Gerenciamento de Estado:** React Context API + AsyncStorage
+- **Build:** EAS (Expo Application Services)
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+# 📦 Como começar
 
-   ```bash
-   npx expo start
-   ```
+## Pré-requisitos
 
-In the output, you'll find options to open the app in a
+Certifique-se de ter instalado:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- [Node.js](https://nodejs.org/)
+- [EAS CLI](https://docs.expo.dev/eas/)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Instalar dependências
 
-## Get a fresh project
+```bash
+npm install
+```
 
-When you're ready, run:
+## Iniciar em desenvolvimento
+
+```bash
+npx expo start
+```
+
+---
+
+# 📦 Builds
+
+## Android (APK de teste)
+
+```bash
+eas build --platform android --profile test-production-apk
+```
+
+## iOS (IPA de teste)
+
+```bash
+eas build --platform ios --profile test-production-ipa
+```
+
+---
+
+# 🚀 Guia de Lançamento (Deploy & Produção)
+
+Sempre que for enviar uma atualização para a Google Play ou App Store, siga os passos abaixo.
+
+## 1. Atualizar a versão (`app.json`)
+
+Antes de gerar os builds, incremente:
+
+- `version` (ex.: `1.0.0` → `1.0.1`)
+- `android.versionCode` (+1)
+- `ios.buildNumber` (+1)
+
+Exemplo:
+
+```json
+{
+  "expo": {
+    "version": "1.0.1",
+    "android": {
+      "versionCode": 2
+    },
+    "ios": {
+      "buildNumber": "2"
+    }
+  }
+}
+```
+
+---
+
+## 2. Gerar builds de teste
+
+### Android (APK)
+
+```bash
+eas build --platform android --profile test-production-apk
+```
+
+### iOS (IPA)
+
+```bash
+eas build --platform ios --profile test-production-ipa
+```
+
+---
+
+## 3. Gerar builds de produção
+
+### Android (AAB)
+
+```bash
+eas build --platform android --profile production
+```
+
+### iOS (IPA para App Store)
+
+```bash
+eas build --platform ios --profile production
+```
+
+---
+
+# 🏗 Arquitetura do Projeto
+
+```
+app/
+├── Rotas e telas do Expo Router
+
+services/
+├── Regras de negócio
+│   ├── Auth
+│   ├── Finance
+│   ├── Avatar
+│   └── Exportação
+
+repositories/
+├── Comunicação direta com o Supabase
+
+cache/
+├── Cache de dados
+
+storage/
+├── AsyncStorage
+
+lib/
+├── Configurações compartilhadas
+│   ├── Supabase
+│   ├── Cores
+│   └── Utilitários
+```
+
+---
+
+# 🛡 Segurança e Boas Práticas
+
+### Limpeza de Cache
+
+Ao realizar login ou logout, o aplicativo limpa automaticamente:
+
+- UsuarioCache
+- AssinaturaCache
+- AsyncStorage
+
+Isso impede que dados da sessão anterior permaneçam no dispositivo.
+
+### Armazenamento de Imagens
+
+Os avatares utilizam o padrão:
+
+```
+userId-avatar
+```
+
+com:
+
+```
+upsert: true
+```
+
+Assim, cada usuário mantém apenas um arquivo de avatar no bucket, evitando arquivos duplicados.
+
+### Proteção de Conta
+
+A exclusão da conta é bloqueada quando existe uma assinatura ativa. O usuário deve cancelar a assinatura antes de excluir a conta.
+
+---
+
+# 📁 Comandos Úteis
+
+## Resetar o projeto
 
 ```bash
 npm run reset-project
 ```
 
-## Builds
+## Verificar erros de TypeScript
 
 ```bash
-# ANDROID
-eas build --platform android --profile test-production-apk
-
-# IOS
-eas build --platform ios --profile test-production-ipa
-
+npx tsc --noEmit
 ```
+
+---
+
+# 💙 Desenvolvido com foco em alta performance financeira.

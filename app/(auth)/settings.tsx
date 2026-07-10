@@ -1,48 +1,44 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useRouter } from 'expo-router'
 import {
-    AlertTriangle,
-    ArrowLeft,
-    Check,
-    ChevronRight,
-    CloudDownload,
-    CloudUpload,
-    Download,
-    FileText,
-    HelpCircle,
-    LogOut,
-    Palette, Shield,
-    Star,
-    Trash2,
-    User,
-    UserX
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  ChevronRight,
+  CloudDownload,
+  CloudUpload,
+  Download,
+  FileText,
+  HelpCircle,
+  LogOut,
+  Palette, Shield,
+  Star,
+  Trash2,
+  User,
+  UserX
 } from 'lucide-react-native'
 import React, { useEffect, useState } from 'react'
 import {
-    ActivityIndicator,
-    Appearance,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    useColorScheme,
-    View
+  ActivityIndicator,
+  Appearance,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useColorScheme,
+  View
 } from 'react-native'
 
 import { ConfirmModal } from "@/components/ui/ConfirmModal"
-import {
-    changePassword,
-    clearData,
-    excluirConta,
-    exportarDadosCSV,
-    fazerBackupNuvem,
-    getAssinaturaUsuario,
-    getDadosUsuario,
-    logout,
-    restaurarBackupNuvem
-} from '@/lib/storage'
+
+import { AssinaturaService } from '@/lib/services/assinatura.service'
+import { AuthService } from '@/lib/services/auth.service'
+import { BackupService } from '@/lib/services/backup.service'
+import { ExportService } from '@/lib/services/export.service'
+import { FinanceService } from '@/lib/services/finance.service'
+import { UsuarioService } from '@/lib/services/usuario.service'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -56,7 +52,7 @@ export default function SettingsPage() {
 
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
-    logout()
+    AuthService.logout()
   };
 
   const [loading, setLoading] = useState(true)
@@ -102,13 +98,13 @@ export default function SettingsPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const user = await getDadosUsuario()
+        const user = await UsuarioService.getDadosUsuario()
         if (user) {
           setUserName(user.nome || '')
           setAvatarUrl(user.avatarUrl || '')
         }
 
-        const assinatura = await getAssinaturaUsuario()
+        const assinatura = await AssinaturaService.getAssinaturaUsuario()
         setPlano(assinatura.plano)
         setStatusPlano(assinatura.statusPlano)
 
@@ -143,7 +139,7 @@ export default function SettingsPage() {
     setLoadingPassword(true)
 
     try {
-      await changePassword(currentPassword, newPassword, confirmPassword)
+      await AuthService.changePassword(currentPassword, newPassword, confirmPassword)
       setPasswordSuccess('Senha alterada!')
       setCurrentPassword('')
       setNewPassword('')
@@ -171,7 +167,7 @@ export default function SettingsPage() {
 
     setIsProcessingBackup(true)
     try {
-      await fazerBackupNuvem()
+      await BackupService.fazerBackupNuvem()
       setBackupStatus({ type: 'success', message: 'Backup salvo na nuvem com sucesso!' })
       setTimeout(() => {
         setShowBackupConfirm(false)
@@ -189,7 +185,7 @@ export default function SettingsPage() {
     setIsProcessingBackup(true)
     
     try {
-      await restaurarBackupNuvem()
+      await BackupService.restaurarBackupNuvem()
       setBackupStatus({ type: 'success', message: 'Dados restaurados com sucesso!' })
       setTimeout(() => {
         setShowRestoreConfirm(false)
@@ -383,7 +379,7 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="Privacidade e Dados">
-        <Item title="Exportar meus dados" description="Baixar uma cópia em CSV" icon={<Download size={18} color={themeColors.text} />} onClick={exportarDadosCSV} />
+        <Item title="Exportar meus dados" description="Baixar uma cópia em CSV" icon={<Download size={18} color={themeColors.text} />} onClick={() => ExportService.exportarDadosCSV()} />
         <Item title="Excluir minha conta" description="Remove permanentemente sua conta" danger icon={<UserX size={18} color={themeColors.danger} />} onClick={() => setShowDeleteAccModal(true)} />
       </Section>
 
@@ -410,7 +406,7 @@ export default function SettingsPage() {
         title="Atenção!"
         message="Esta ação apagará todos os seus registros."
         onCancel={() => setShowResetDataModal(false)}
-        onConfirm={clearData}
+        onConfirm={FinanceService.clearData}
       />
 
       <ConfirmModal 
@@ -418,7 +414,7 @@ export default function SettingsPage() {
         title="Excluir Conta"
         message="Seu acesso será revogado e seus dados apagados. Se tem certeza?"
         onCancel={() => setShowDeleteAccModal(false)}
-        onConfirm={excluirConta}
+        onConfirm={UsuarioService.excluirConta}
       />
     </ScrollView>
   )

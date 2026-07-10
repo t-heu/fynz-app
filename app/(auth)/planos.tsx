@@ -1,27 +1,29 @@
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { getAssinaturaUsuario, getDadosUsuario, logout } from '@/lib/storage'; // Dica: Ideal migrar p/ SecureStore ou AsyncStorage no mobile
+import { AssinaturaService } from '@/lib/services/assinatura.service';
+import { AuthService } from '@/lib/services/auth.service';
+import { UsuarioService } from '@/lib/services/usuario.service';
 import type { Assinatura } from '@/lib/types';
 import { useRouter } from 'expo-router';
 import {
-    ArrowLeft,
-    CheckCircle2,
-    HeartCrack,
-    LogOut,
-    Shield,
-    Star,
-    Zap
+  ArrowLeft,
+  CheckCircle2,
+  HeartCrack,
+  LogOut,
+  Shield,
+  Star,
+  Zap
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Linking,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    useColorScheme,
-    View
+  ActivityIndicator,
+  Alert,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useColorScheme,
+  View
 } from 'react-native';
 
 interface DadosUsuario {
@@ -45,13 +47,13 @@ export default function PlanosPage() {
   
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
-    logout()
+    AuthService.logout()
   };
 
   useEffect(() => {
     async function loadData() {
       try {
-        const data = await getAssinaturaUsuario()
+        const data = await AssinaturaService.getAssinaturaUsuario()
 
         if (!data) {
           setPlano(null)
@@ -75,7 +77,7 @@ export default function PlanosPage() {
     try {
       setLoadingCheck(priceId)
       
-      const user = await getDadosUsuario()
+      const user = await UsuarioService.getDadosUsuario()
       
       if (!user) {
         Alert.alert('Atenção', 'Você precisa estar logado para assinar.')
@@ -113,7 +115,7 @@ export default function PlanosPage() {
 
   async function abrirPortal() {
     try {
-      const user = await getDadosUsuario()
+      const user = await UsuarioService.getDadosUsuario()
       if (!user) return
 
       const response = await fetch('https://seu-dominio.com/api/stripe/portal', {

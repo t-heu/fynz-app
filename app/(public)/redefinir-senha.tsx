@@ -1,20 +1,20 @@
 import { getPasswordStrength } from '@/lib/finance-utils'
-import { updatePassword } from '@/lib/storage'
+import { AuthService } from '@/lib/services/auth.service'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import React, { useState } from 'react'
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native'
 
 const { height } = Dimensions.get('window');
@@ -69,7 +69,7 @@ export default function RedefinirSenhaPage() {
     try {
       setLoading(true)
 
-      await updatePassword(senha)
+      await AuthService.updatePassword(senha)
 
       // No Mobile, usamos o Alert nativo ao invés do alert do navegador
       Alert.alert('Sucesso', 'Senha atualizada com sucesso!', [

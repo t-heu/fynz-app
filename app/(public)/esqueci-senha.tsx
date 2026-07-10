@@ -1,18 +1,18 @@
-import { resetPassword } from '@/lib/storage'
+import { AuthService } from '@/lib/services/auth.service'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import React, { useState } from 'react'
 import {
-    ActivityIndicator,
-    Dimensions,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native'
 
 const { height } = Dimensions.get('window');
@@ -31,7 +31,7 @@ export default function EsqueciSenhaPage() {
       setErro('')
       setSucesso(false)
 
-      await resetPassword(email)
+      await AuthService.resetPassword(email)
 
       setSucesso(true)
     } catch (err: any) {

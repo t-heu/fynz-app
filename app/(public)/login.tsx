@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
-import { limparCacheUsuario, login } from '@/lib/storage';
+import { AuthService } from '@/lib/services/auth.service';
 
 const { width } = Dimensions.get('window');
 
@@ -35,8 +35,7 @@ export default function LoginPage() {
   async function entrar() {
     setLoading(true);
     try {
-      await login({ email, senha });
-      limparCacheUsuario();
+      await AuthService.login({ email, senha });
     } catch (err: any) {
       setLoading(false);
     }

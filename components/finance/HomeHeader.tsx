@@ -2,7 +2,8 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal"
 import { useFinance } from '@/contexts/FinanceContext'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { COLORS } from "@/lib/colors"
-import { getDadosUsuario, logout } from '@/lib/storage'
+import { AuthService } from '@/lib/services/auth.service'
+import { UsuarioService } from '@/lib/services/usuario.service'
 import { useRouter } from 'expo-router'
 import { LogOut, Moon, Settings, Sun, Sunrise } from 'lucide-react-native'
 import React, { useEffect, useMemo, useState } from 'react'
@@ -26,12 +27,12 @@ export function HomeHeader() {
   
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
-    logout()
+    AuthService.logout()
   };
 
   useEffect(() => {
     async function loadUserData() {
-      const user = await getDadosUsuario()
+      const user = await UsuarioService.getDadosUsuario()
       if (user) {
         setAvatarUrl(user.avatarUrl || '')
         setUserName(user.nome || '')

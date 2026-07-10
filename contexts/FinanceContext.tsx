@@ -11,10 +11,11 @@ import React, {
 import type { AppData } from '@/lib/types'
 
 import {
-  carregarDados,
-  getDadosUsuario,
-  salvarDados as persistirDados
-} from '@/lib/storage'
+  FinanceService
+} from '@/lib/services/finance.service'
+import {
+  UsuarioService
+} from '@/lib/services/usuario.service'
 
 interface FinanceContextType {
   dados: AppData
@@ -42,11 +43,11 @@ export function FinanceProvider({
   useEffect(() => {
     async function inicializar() {
       try {
-        const dadosCarregados = await carregarDados()
+        const dadosCarregados = await FinanceService.carregarDados()
 
         setDadosState(dadosCarregados)
 
-        const data = await getDadosUsuario()
+        const data = await UsuarioService.getDadosUsuario()
 
         // Adicione esta verificação de segurança
         if (data) {
@@ -72,7 +73,7 @@ export function FinanceProvider({
     async (d: AppData) => {
       setDadosState({ ...d })
 
-      await persistirDados(d)
+      await FinanceService.salvarDados(d)
     },
     []
   )

@@ -1,6 +1,6 @@
 import { useFinance } from '@/contexts/FinanceContext';
 import { useAuth } from '@/hooks/use-auth';
-import { restaurarBackupNuvem } from '@/lib/storage';
+import { BackupService } from '@/lib/services/backup.service';
 import { Redirect, Slot } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -19,7 +19,7 @@ export default function PublicLayout() {
       if (user && !dataLoaded && !isSyncing) {
         setIsSyncing(true);
         try {
-          const data = await restaurarBackupNuvem();
+          const data = await BackupService.restaurarBackupNuvem();
           if (data) setDados(data);
         } catch (err) {
           console.error("Erro ao restaurar:", err);

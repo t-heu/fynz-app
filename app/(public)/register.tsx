@@ -1,5 +1,5 @@
 import { getPasswordStrength } from '@/lib/finance-utils';
-import { register } from '@/lib/storage';
+import { AuthService } from '@/lib/services/auth.service';
 import { router } from 'expo-router';
 import { ChevronLeft, Eye, EyeOff, Lock, Mail, User } from 'lucide-react-native';
 import React, { useState } from 'react';
@@ -81,7 +81,7 @@ export default function CadastroPage() {
     if (passwordStrength < 4) { setErro('Escolha uma senha mais forte.'); return; }
     try {
       setLoading(true); setErro('');
-      await register({ email, senha, nome });
+      await AuthService.register({ email, senha, nome });
       router.replace('/login');
     } catch (err: any) { setErro(err.message || 'Erro ao cadastrar.'); } 
     finally { setLoading(false); }

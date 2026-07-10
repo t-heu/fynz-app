@@ -3,24 +3,20 @@ import { useRouter } from 'expo-router'
 import { ArrowLeft, Camera } from 'lucide-react-native'
 import React, { useEffect, useState } from 'react'
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    useColorScheme,
-    View
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useColorScheme,
+  View
 } from 'react-native'
 
-import {
-    getDadosUsuario,
-    removeProfilePhoto,
-    updateProfileName,
-    uploadProfilePhoto,
-} from '@/lib/storage'
+import { AvatarService } from '@/lib/services/avatar.service'
+import { UsuarioService } from '@/lib/services/usuario.service'
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -49,7 +45,7 @@ export default function PerfilPage() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        const user = await getDadosUsuario()
+        const user = await UsuarioService.getDadosUsuario()
         if (user) {
           setUserId(user.id)
           setFullName(user.nome || '')
@@ -95,7 +91,7 @@ export default function PerfilPage() {
         type: pickedAsset.mimeType || 'image/jpeg'
       }
 
-      const newAvatarUrl = await uploadProfilePhoto(fileMock, userId)
+      const newAvatarUrl = await AvatarService.uploadProfilePhoto(fileMock, userId)
       setAvatarUrl(newAvatarUrl || pickedAsset.uri)
 
       Alert.alert('Sucesso', 'Foto atualizada com sucesso!')
@@ -110,7 +106,7 @@ export default function PerfilPage() {
   async function handleRemovePhoto() {
     try {
       setLoading(true)
-      await removeProfilePhoto()
+      await AvatarService.removeProfilePhoto()
       setAvatarUrl('')
       Alert.alert('Sucesso', 'Foto removida com sucesso!')
     } catch (error) {
@@ -124,7 +120,7 @@ export default function PerfilPage() {
   async function handleSaveName() {
     try {
       setLoading(true)
-      await updateProfileName(fullName)
+      await UsuarioService.updateProfileName(fullName)
       Alert.alert('Sucesso', 'Nome atualizado com sucesso!')
     } catch {
       Alert.alert('Erro', 'Erro ao atualizar o nome.')
