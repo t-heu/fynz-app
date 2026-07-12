@@ -1,16 +1,18 @@
 import { ModalManual } from '@/components/ui/ModalManual'
 import { APP_URL } from "@/constants/vars"
 import { useFinance } from '@/contexts/FinanceContext'
+import { useToast } from '@/contexts/ToastContext'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { bancos } from '@/lib/bancos'
 import { COLORS } from "@/lib/colors"
 import { aplicarMascaraMoeda, fm, lerValorMoeda } from '@/lib/finance-utils'
 import { ChevronLeft, CreditCard } from 'lucide-react-native'
 import React, { useEffect, useMemo, useState } from 'react'
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
 export function FormCartao({ open, onClose, editando, onSaved }: any) {
   const { dados, salvar } = useFinance()
+  const { showToast } = useToast();
   const colorScheme = useColorScheme();
   const currentTheme = colorScheme === 'dark' ? COLORS.dark : COLORS.light;
   const styles = getStyles(currentTheme)
@@ -49,7 +51,11 @@ export function FormCartao({ open, onClose, editando, onSaved }: any) {
     bancos.filter(b => b.nome.toLowerCase().includes(buscaBanco.toLowerCase())), [buscaBanco])
 
   function salvarCartao() {
-    if (!nome.trim()) return Alert.alert('Aviso', 'Digite o nome do cartão!')
+    if (!nome.trim()) {
+      showToast('alert', 'Digite o nome do cartão!', 'Aviso')
+      return
+    }
+
     const novoCartao = {
       id: editando?.id || Date.now(),
       icone,
@@ -59,6 +65,7 @@ export function FormCartao({ open, onClose, editando, onSaved }: any) {
       vencimento: parseInt(vencimento),
       contaPagamento: parseInt(contaId)
     }
+
     const novosDados = { ...dados }
     if (editando) {
       const idx = novosDados.cartoes.findIndex((x: any) => x.id === editando.id)
@@ -66,6 +73,7 @@ export function FormCartao({ open, onClose, editando, onSaved }: any) {
     } else {
       novosDados.cartoes = [...novosDados.cartoes, novoCartao]
     }
+    
     salvar(novosDados)
     onClose()
     onSaved?.()

@@ -1,6 +1,5 @@
 import { PALETA } from '@/lib/colors'
 import { router } from 'expo-router'
-import { Alert } from 'react-native'
 import { clearStorage, getItem, setItem } from '../storage/db'
 import type { AppData, Categoria } from '../types'
 
@@ -62,20 +61,7 @@ export const FinanceService = {
   },
 
   async clearData() {
-    Alert.alert(
-      'Apagar Tudo',
-      'Todos os dados registrados serão excluídos permanentemente do aplicativo e não poderão ser recuperados. Tem certeza?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Sim, excluir', 
-          style: 'destructive',
-          onPress: async () => {
-            await clearStorage()
-            router.push('/(tabs)/dashboard') 
-          }
-        }
-      ]
-    )
+    await clearStorage()
+    router.push('/(tabs)/dashboard') 
   }
 }

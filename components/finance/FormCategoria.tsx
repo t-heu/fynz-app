@@ -1,18 +1,19 @@
 import { ModalManual } from '@/components/ui/ModalManual'
 import { useFinance } from '@/contexts/FinanceContext'
+import { useToast } from '@/contexts/ToastContext'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { CATEGORIA_ICONS } from '@/lib/categoria-icons'
 import { COLORS, PALETA } from '@/lib/colors'
 import React, { useEffect, useState } from 'react'
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native'
+import { ConfirmModal } from '../ui/ConfirmModal'
 
 interface Props {
   open: boolean
@@ -25,9 +26,11 @@ interface Props {
 export function FormCategoria({ open, onClose, editando, defaultTipo = 'Despesa', onSaved }: Props) {
   const { dados, salvar } = useFinance()
   const colorScheme = useColorScheme()
+  const { showToast } = useToast();
   const currentTheme = colorScheme === 'dark' ? COLORS.dark : COLORS.light
   const styles = getStyles(currentTheme)
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [tipo, setTipo] = useState<'Despesa' | 'Receita'>(defaultTipo)
   const [nome, setNome] = useState('')
   const [icone, setIcone] = useState('home')
@@ -48,8 +51,11 @@ export function FormCategoria({ open, onClose, editando, defaultTipo = 'Despesa'
   }, [editando, open, defaultTipo])
 
   function salvarCategoria() {
-    if (!nome.trim()) return Alert.alert('Aviso', 'Digite o nome da categoria!')
-    
+    if (!nome.trim()) {
+      showToast('alert', 'Digite o nome da categoria!', 'Aviso')
+      return
+    }
+
     const novaCat = {
       id: editando?.id || Date.now(),
       nome: nome.trim(),
@@ -72,22 +78,10 @@ export function FormCategoria({ open, onClose, editando, defaultTipo = 'Despesa'
   }
 
   function excluir() {
-    Alert.alert(
-      'Excluir',
-      'Apagar esta categoria?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Apagar', 
-          style: 'destructive',
-          onPress: () => {
-            const novosDados = { ...dados, categorias: dados.categorias.filter((x: any) => x.id !== editando!.id) }
-            salvar(novosDados)
-            onClose()
-          }
-        }
-      ]
-    )
+    const novosDados = { ...dados, categorias: dados.categorias.filter((x: any) => x.id !== editando!.id) }
+    salvar(novosDados)
+    onClose()
+    setShowLogoutModal(false)
   }
 
   return (
@@ -234,7 +228,7 @@ export function FormCategoria({ open, onClose, editando, defaultTipo = 'Despesa'
           editando.id !== 'SALARIO' && (
             <View style={styles.section}>
               <TouchableOpacity
-                onPress={excluir}
+                onPress={() => setShowLogoutModal(true)}
                 style={styles.deleteBtn}
               >
                 <Text style={styles.deleteBtnText}>
@@ -244,6 +238,14 @@ export function FormCategoria({ open, onClose, editando, defaultTipo = 'Despesa'
             </View>
           )}
       </ScrollView>
+
+      <ConfirmModal 
+        visible={showLogoutModal}
+        title="Excluir Categoria"
+        message="Você tem certeza que deseja apagar esta categoria?"
+        onCancel={() => setShowLogoutModal(false)}
+        onConfirm={excluir}
+      />
     </ModalManual>
   )
 }

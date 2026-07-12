@@ -2,7 +2,6 @@ import { validatePasswordStrength } from '@/lib/finance-utils'
 import { supabase } from '@/lib/supabase'
 import { traduzirErroAuth } from '@/lib/traduzir-erro-auth'
 import { router } from 'expo-router'
-import { Alert } from 'react-native'
 import { AssinaturaCache } from '../cache/assinatura-cache'
 import { UsuarioCache } from '../cache/usuario-cache'
 import { clearStorage } from '../storage/db'
@@ -47,7 +46,7 @@ export const AuthService = {
       router.replace('/login')
     } catch (error) {
       console.error('Erro ao realizar logout:', error)
-      Alert.alert('Erro', 'Ocorreu um erro ao sair. Por favor, tente novamente.')
+      throw error
     }
   },
 

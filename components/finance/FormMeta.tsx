@@ -1,11 +1,13 @@
 import { APP_URL } from "@/constants/vars"
 import { useFinance } from '@/contexts/FinanceContext'
+import { useToast } from "@/contexts/ToastContext"
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { COLORS } from "@/lib/colors"
 import { aplicarMascaraMoeda, dtISO, fm, lerValorMoeda } from '@/lib/finance-utils'
 import { Building2, Calendar, Check, ChevronDown, ChevronLeft, Target, Wallet } from 'lucide-react-native'
 import React, { useEffect, useMemo, useState } from 'react'
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ConfirmModal } from "../ui/ConfirmModal"
 import { ModalFullscreen } from '../ui/ModalFullscreen'
 
 interface Props {
@@ -18,6 +20,7 @@ interface Props {
 export function FormMeta({ open, onClose, editando, onSaved }: Props) {
   const { dados, salvar } = useFinance()
   const colorScheme = useColorScheme();
+  const { showToast } = useToast();
   const currentTheme = colorScheme === 'dark' ? COLORS.dark : COLORS.light;
   const styles = getStyles(currentTheme)
 
@@ -25,6 +28,7 @@ export function FormMeta({ open, onClose, editando, onSaved }: Props) {
   const [objetivoStr, setObjetivoStr] = useState('')
   const [prazo, setPrazo] = useState(dtISO())
   const [contaId, setContaId] = useState('')
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   
   // Controle do modal de seleção de conta vinculada
   const [selecionandoConta, setSelecionandoConta] = useState(false)
@@ -57,11 +61,13 @@ export function FormMeta({ open, onClose, editando, onSaved }: Props) {
     const obj = lerValorMoeda(objetivoStr)
 
     if (!nome.trim() || !obj) {
-      return Alert.alert('Aviso', 'Preencha o nome e o valor da meta!')
+      showToast('alert', 'Preencha o nome e o valor da meta!', 'Aviso')
+      return
     }
 
     if (!contaId) {
-      return Alert.alert('Aviso', 'Selecione uma conta!')
+      showToast('alert', 'Selecione uma conta!', 'Aviso')
+      return
     }
 
     const contaSelecionada = dados.contas.find(
@@ -69,7 +75,8 @@ export function FormMeta({ open, onClose, editando, onSaved }: Props) {
     )
 
     if (!contaSelecionada) {
-      return Alert.alert('Aviso', 'A conta selecionada não existe!')
+      showToast('alert', 'A conta selecionada não existe!', 'Aviso')
+      return
     }
 
     const nova = {
@@ -111,38 +118,23 @@ export function FormMeta({ open, onClose, editando, onSaved }: Props) {
 
   function excluir() {
     if ((editando?.depositado || 0) > 0) {
-      return Alert.alert(
-        'Não é possível excluir',
-        'Esta meta possui valor guardado. Resgate todo o saldo antes de excluí-la.'
-      )
+      showToast('error', 'Esta meta possui valor guardado. Resgate todo o saldo antes de excluí-la.', 'Não é possível excluir')
+      return
     }
 
-    Alert.alert(
-      'Excluir Meta',
-      'Deseja realmente apagar esta meta?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Apagar',
-          style: 'destructive',
-          onPress: () => {
-            const metaId = editando!.id
+    const metaId = editando!.id
 
-            const novosDados = {
-              ...dados,
-              metas: dados.metas.filter((x: any) => x.id !== metaId),
-              lancamentos: dados.lancamentos.filter(
-                (l: any) => l.metaId !== metaId
-              ),
-            }
+    const novosDados = {
+      ...dados,
+      metas: dados.metas.filter((x: any) => x.id !== metaId),
+      lancamentos: dados.lancamentos.filter(
+        (l: any) => l.metaId !== metaId
+      ),
+    }
 
-            salvar(novosDados)
-            onClose()
-            onSaved?.()
-          }
-        }
-      ]
-    )
+    salvar(novosDados)
+    onClose()
+    onSaved?.()
   }
 
   return (
@@ -243,7 +235,7 @@ export function FormMeta({ open, onClose, editando, onSaved }: Props) {
 
           {/* Botão de Exclusão */}
           {editando && (
-            <TouchableOpacity onPress={excluir} style={styles.deleteBtn}>
+            <TouchableOpacity onPress={() => setShowLogoutModal(true)} style={styles.deleteBtn}>
               <Text style={styles.deleteBtnText}>Excluir Meta</Text>
             </TouchableOpacity>
           )}
@@ -296,6 +288,14 @@ export function FormMeta({ open, onClose, editando, onSaved }: Props) {
           </View>
         )}
       </View>
+
+      <ConfirmModal 
+        visible={showLogoutModal}
+        title="Excluir Meta"
+        message="Deseja realmente apagar esta meta?"
+        onCancel={() => setShowLogoutModal(false)}
+        onConfirm={excluir}
+      />
     </ModalFullscreen>
   )
 }

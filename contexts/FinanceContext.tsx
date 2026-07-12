@@ -8,7 +8,7 @@ import React, {
   useState
 } from 'react'
 
-import type { AppData } from '@/lib/types'
+import type { AppData, TabId } from '@/lib/types'
 
 import {
   FinanceService
@@ -23,6 +23,8 @@ interface FinanceContextType {
   salvar: (d: AppData) => void
   nomeUsuario: string
   dataAtualView: Date
+  activeTab: TabId
+  setActiveTab: (t: TabId) => void
   setDataAtualView: (d: Date) => void
   mudarMes: (direcao: number) => void
 }
@@ -38,6 +40,7 @@ export function FinanceProvider({
   const [dados, setDadosState] = useState<AppData | null>(null)
   const [nomeUsuario, setNomeUsuario] = useState('Usuário')
   const [dataAtualView, setDataAtualView] = useState<Date>(new Date())
+  const [activeTab, setActiveTab] = useState<TabId>('home')
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
@@ -104,6 +107,8 @@ export function FinanceProvider({
         setDados: setDadosState,
         salvar,
         nomeUsuario,
+        activeTab,
+        setActiveTab,
         dataAtualView,
         setDataAtualView,
         mudarMes,

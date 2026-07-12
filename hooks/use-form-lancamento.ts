@@ -1,6 +1,6 @@
+import { useToast } from '@/contexts/ToastContext'
 import { Tags } from 'lucide-react-native'
 import { useEffect, useMemo, useState } from 'react'
-import { Alert } from 'react-native'
 import { useFinance } from '../contexts/FinanceContext'
 import { bancos } from '../lib/bancos'
 import { CATEGORIA_ICONS } from '../lib/categoria-icons'
@@ -12,7 +12,7 @@ const FREQ_INC: Record<RepFreq, number> = { Mensal: 1, Bimestral: 2, Trimestral:
 
 export function useFormLancamento(open: boolean, onClose: () => void, editandoId?: number | null) {
   const { dados, salvar } = useFinance()
-  
+  const { showToast } = useToast();
   // Estados do Formulário
   const [tipo, setTipo] = useState<'Despesa' | 'Receita'>('Despesa')
   const [valorStr, setValorStr] = useState('')
@@ -100,7 +100,7 @@ export function useFormLancamento(open: boolean, onClose: () => void, editandoId
 
   function salvarLancamento() {
     if (lerValorMoeda(valorStr) <= 0 || !categoriaId) {
-      Alert.alert('Aviso', 'Preencha o valor e a categoria!')
+      showToast('alert', 'Preencha o valor e a categoria!', 'Aviso')
       return
     }
     if (editandoId && (editandoGrupoId || repType !== 'Unico')) {

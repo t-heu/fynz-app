@@ -1,4 +1,3 @@
-import { Alert } from 'react-native';
 import { BackupRepository } from '../repositories/backup.repository';
 import { FinanceService } from '../services/finance.service'; // Supondo que você moveu os métodos locais para cá
 import { UsuarioService } from '../services/usuario.service';
@@ -40,10 +39,7 @@ export const BackupService = {
       const dados = await FinanceService.carregarDados()
       await BackupRepository.uploadBackup(userId, JSON.stringify(dados))
       await BackupRepository.registrarDataBackup(userId)
-
-      Alert.alert('Sucesso', 'Backup em nuvem realizado com sucesso!')
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Erro ao fazer backup')
       throw error
     }
   },

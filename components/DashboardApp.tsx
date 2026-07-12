@@ -1,18 +1,20 @@
 import { ModalDetalheCartao } from '@/components/ModalDetalheCartao';
 import { HomeHeader } from '@/components/finance/HomeHeader';
 import { ModalGerenciar } from '@/components/ui/ModalGerenciar';
-import { APP_URL } from '@/constants/vars'; // Assumindo que você usa isso para as URLs das imagens
+import { APP_URL } from '@/constants/vars';
 import { useFinance } from '@/contexts/FinanceContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { CATEGORIA_ICONS } from '@/lib/categoria-icons';
 import { COLORS } from '@/lib/colors';
 import { calcularSaldoComprometidoCartao, fm } from '@/lib/finance-utils';
 import type { Cartao } from '@/lib/types';
+import { useLocalSearchParams } from 'expo-router';
 import { Circle, CreditCard, Landmark, Wallet } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { DeviceEventEmitter, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-// Função movida para fora para não recriar a cada render
+import { markAccountCreatedForConfigTour } from '@/components/AppWalkthrough';
+
 const getMesAnoCard = (data: string, diaFechamento: number, isParcelado: boolean) => {
   if (!data) return { mes: -1, ano: -1 }
   const [anoStr, mesStr, diaStr] = data.split('-').map(Number)
@@ -38,6 +40,13 @@ export function TabHome() {
   const [gerenciando, setGerenciando] = useState<'Contas' | 'Cartões' | 'Categorias' | null>(null)
   const [cartaoFoco, setCartaoFoco] = useState<Cartao | null>(null)
 
+  // Referências para Scroll e Medição Dinâmica do Walkthrough
+  const scrollViewRef = useRef<ScrollView>(null)
+  const contasBtnRef = useRef<any>(null)
+  const cartoesBtnRef = useRef<any>(null)
+  const categoriasBtnRef = useRef<any>(null)
+  const sectionsY = useRef({ Contas: 0, Cartões: 0, Categorias: 0 })
+
   const { mesAtualNo, anoAtualNo, diaAtualNo } = useMemo(() => {
     const now = new Date()
     return {
@@ -47,7 +56,46 @@ export function TabHome() {
     }
   }, [])
 
-  // OTIMIZAÇÃO: Calcula todas as faturas em uma única passada
+  const { restartTour } = useLocalSearchParams();
+
+  useEffect(() => {
+    if (restartTour === '1') {
+      markAccountCreatedForConfigTour();
+    }
+  }, [restartTour]);
+
+  // Listener para escutar pedidos de medição vindos do Walkthrough
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tour-request-target', ({ activeTab: currentTab, stepIndex }) => {
+      if (currentTab !== 'home') return;
+
+      let targetKey: 'Contas' | 'Cartões' | 'Categorias' | null = null;
+      let targetRef: React.RefObject<any> | null = null;
+
+      if (stepIndex === 1) { targetKey = 'Contas'; targetRef = contasBtnRef; }
+      else if (stepIndex === 2) { targetKey = 'Cartões'; targetRef = cartoesBtnRef; }
+      else if (stepIndex === 3) { targetKey = 'Categorias'; targetRef = categoriasBtnRef; }
+
+      if (!targetKey || !targetRef) {
+        DeviceEventEmitter.emit('tour-target-position', null);
+        return;
+      }
+
+      // 1. Rola suavemente até o início da seção desejada
+      const scrollY = sectionsY.current[targetKey];
+      scrollViewRef.current?.scrollTo({ y: Math.max(0, scrollY - 20), animated: true });
+
+      // 2. Aguarda o término da animação do scroll para medir a posição real na tela
+      setTimeout(() => {
+        targetRef?.current?.measureInWindow((x: number, y: number, width: number, height: number) => {
+          DeviceEventEmitter.emit('tour-target-position', { x, y, width, height, stepIndex });
+        });
+      }, 350);
+    });
+
+    return () => sub.remove();
+  }, []);
+
   const faturasPorCartao = useMemo(() => {
     const lancamentos = dados.lancamentos || []
     const mapa: Record<number, number> = {}
@@ -97,13 +145,16 @@ export function TabHome() {
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+      >
         
         <HomeHeader />
 
         {/* CARDS DE RESUMO */}
         <View style={styles.summaryGrid}>
-          {/* Card Saldo Geral */}
           <View style={[styles.card, styles.cardSaldo]}>
             <Text style={styles.cardLabel}>Saldo geral</Text>
             <Text 
@@ -116,7 +167,6 @@ export function TabHome() {
             </Text>
           </View>
 
-          {/* Card Total Faturas */}
           <View style={[styles.card, styles.cardFaturas]}>
             <View style={styles.faturasHeader}>
               <Wallet size={16} color={currentTheme.mutedForeground} />
@@ -130,7 +180,10 @@ export function TabHome() {
         </View>
 
         {/* SEÇÃO MINHAS CONTAS */}
-        <View style={styles.sectionContainer}>
+        <View 
+          style={styles.sectionContainer}
+          onLayout={(e) => { sectionsY.current.Contas = e.nativeEvent.layout.y }}
+        >
           <Text style={styles.sectionTitle}>Minhas contas</Text>
 
           {contasOrdenadas.length === 0 && (
@@ -174,13 +227,16 @@ export function TabHome() {
             })}
           </View>
 
-          <TouchableOpacity style={styles.manageBtn} onPress={() => setGerenciando('Contas')}>
+          <TouchableOpacity ref={contasBtnRef} style={styles.manageBtn} onPress={() => setGerenciando('Contas')}>
             <Text style={styles.manageBtnText}>Gerenciar Contas</Text>
           </TouchableOpacity>
         </View>
 
         {/* SEÇÃO MEUS CARTÕES */}
-        <View style={styles.sectionContainer}>
+        <View 
+          style={styles.sectionContainer}
+          onLayout={(e) => { sectionsY.current.Cartões = e.nativeEvent.layout.y }}
+        >
           <Text style={styles.sectionTitle}>Meus cartões</Text>
           
           {cartoesOrdenados.length === 0 && (
@@ -239,13 +295,16 @@ export function TabHome() {
             })}
           </View>
 
-          <TouchableOpacity style={styles.manageBtn} onPress={() => setGerenciando('Cartões')}>
+          <TouchableOpacity ref={cartoesBtnRef} style={styles.manageBtn} onPress={() => setGerenciando('Cartões')}>
             <Text style={styles.manageBtnText}>Gerenciar Cartões</Text>
           </TouchableOpacity>
         </View>
 
         {/* SEÇÃO CATEGORIAS */}
-        <View style={styles.sectionContainer}>
+        <View 
+          style={styles.sectionContainer}
+          onLayout={(e) => { sectionsY.current.Categorias = e.nativeEvent.layout.y }}
+        >
           <Text style={styles.sectionTitle}>Categorias</Text>
           
           {categoriasValidas.length === 0 ? (
@@ -274,14 +333,13 @@ export function TabHome() {
             </View>
           )}
           
-          <TouchableOpacity style={styles.manageBtn} onPress={() => setGerenciando('Categorias')}>
+          <TouchableOpacity ref={categoriasBtnRef} style={styles.manageBtn} onPress={() => setGerenciando('Categorias')}>
             <Text style={styles.manageBtnText}>Gerenciar categorias</Text>
           </TouchableOpacity>
         </View>
 
       </ScrollView>
 
-      {/* MODAIS */}
       <ModalGerenciar tipo={gerenciando} onClose={() => setGerenciando(null)} />
       <ModalDetalheCartao cartao={cartaoFoco} onClose={() => setCartaoFoco(null)} />
     </View>
@@ -289,265 +347,47 @@ export function TabHome() {
 }
 
 const getStyles = (theme: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.background,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
-  },
-  
-  // Resumos
-  summaryGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-    marginTop: 8,
-  },
-  card: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 20,
-    backgroundColor: theme.card,
-    borderWidth: 1,
-    borderColor: theme.border,
-    justifyContent: 'center',
-  },
-  cardSaldo: {
-    alignItems: 'flex-start',
-  },
-  cardLabel: {
-    fontSize: 13,
-    color: theme.mutedForeground,
-    marginBottom: 6,
-  },
-  saldoTotalText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  cardFaturas: {
-    alignItems: 'center',
-  },
-  faturasHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  faturasLabel: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    color: theme.mutedForeground,
-  },
-  faturasValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: theme.destructive,
-    marginBottom: 2,
-  },
-  faturasSubText: {
-    fontSize: 10,
-    color: theme.mutedForeground,
-  },
-
-  // Títulos de Seção
-  sectionContainer: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.foreground,
-    marginBottom: 12,
-    marginLeft: 4,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: theme.mutedForeground,
-    marginLeft: 4,
-    marginBottom: 12,
-  },
-
-  // Listas Genéricas (Contas)
-  listGrid: {
-    gap: 12,
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: theme.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'transparent', // Pode ser theme.border se quiser todas delineadas
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-    borderWidth: 1,
-    borderColor: theme.border,
-    overflow: 'hidden',
-  },
-  iconImage: {
-    width: '100%',
-    height: '100%',
-  },
-  itemBody: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: theme.foreground,
-  },
-  itemTrailing: {
-    marginLeft: 12,
-  },
-  itemValue: {
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-
-  // Listas de Cartões
-  cardItem: {
-    backgroundColor: theme.card,
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: theme.border,
-    minHeight: 140,
-    justifyContent: 'space-between',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  cardHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-    marginRight: 10,
-  },
-  cardIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  cardName: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: theme.foreground,
-  },
-  cardVenc: {
-    fontSize: 11,
-    color: theme.mutedForeground,
-    marginTop: 2,
-  },
-  cardTypeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: theme.border,
-  },
-  cardTypeBadgeText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: theme.mutedForeground,
-    letterSpacing: 0.5,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: 16,
-  },
-  cardLimitLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: theme.mutedForeground,
-    textTransform: 'uppercase',
-  },
-  cardLimitValue: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: theme.foreground,
-    marginTop: 2,
-  },
-  cardFaturaLabel: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  cardFaturaValue: {
-    fontSize: 16,
-    fontWeight: '900',
-    marginTop: 2,
-  },
-
-  // Categorias Grid
-  categoriesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  categoryItem: {
-    width: '48%', // Duas colunas
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.card,
-    padding: 12,
-    borderRadius: 16,
-    gap: 10,
-  },
-  categoryIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.foreground,
-  },
-  categoryType: {
-    fontSize: 11,
-    color: theme.mutedForeground,
-    marginTop: 1,
-    textTransform: 'capitalize',
-  },
-
-  // Botões "Gerenciar"
-  manageBtn: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.primary,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-  },
-  manageBtnText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: theme.primary,
-  },
+  container: { flex: 1, backgroundColor: theme.background },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
+  summaryGrid: { flexDirection: 'row', gap: 12, marginBottom: 24, marginTop: 8 },
+  card: { flex: 1, padding: 16, borderRadius: 20, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, justifyContent: 'center' },
+  cardSaldo: { alignItems: 'flex-start' },
+  cardLabel: { fontSize: 13, color: theme.mutedForeground, marginBottom: 6 },
+  saldoTotalText: { fontSize: 24, fontWeight: 'bold' },
+  cardFaturas: { alignItems: 'center' },
+  faturasHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  faturasLabel: { fontSize: 10, fontWeight: 'bold', letterSpacing: 1, color: theme.mutedForeground },
+  faturasValue: { fontSize: 20, fontWeight: 'bold', color: theme.destructive, marginBottom: 2 },
+  faturasSubText: { fontSize: 10, color: theme.mutedForeground },
+  sectionContainer: { marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: theme.foreground, marginBottom: 12, marginLeft: 4 },
+  emptyText: { fontSize: 14, color: theme.mutedForeground, marginLeft: 4, marginBottom: 12 },
+  listGrid: { gap: 12 },
+  listItem: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: theme.card, borderRadius: 16, borderWidth: 1, borderColor: 'transparent' },
+  iconContainer: { width: 44, height: 44, borderRadius: 22, backgroundColor: theme.border, alignItems: 'center', justifyContent: 'center', marginRight: 14, borderWidth: 1, borderColor: theme.border, overflow: 'hidden' },
+  iconImage: { width: '100%', height: '100%' },
+  itemBody: { flex: 1 },
+  itemName: { fontSize: 15, fontWeight: '600', color: theme.foreground },
+  itemTrailing: { marginLeft: 12 },
+  itemValue: { fontSize: 15, fontWeight: 'bold' },
+  cardItem: { backgroundColor: theme.card, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: theme.border, minHeight: 140, justifyContent: 'space-between' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, marginRight: 10 },
+  cardIconBox: { width: 36, height: 36, borderRadius: 18, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border },
+  cardName: { fontSize: 15, fontWeight: 'bold', color: theme.foreground },
+  cardVenc: { fontSize: 11, color: theme.mutedForeground, marginTop: 2 },
+  cardTypeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: theme.border },
+  cardTypeBadgeText: { fontSize: 9, fontWeight: 'bold', color: theme.mutedForeground, letterSpacing: 0.5 },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 16 },
+  cardLimitLabel: { fontSize: 10, fontWeight: '600', color: theme.mutedForeground, textTransform: 'uppercase' },
+  cardLimitValue: { fontSize: 13, fontWeight: 'bold', color: theme.foreground, marginTop: 2 },
+  cardFaturaLabel: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
+  cardFaturaValue: { fontSize: 16, fontWeight: '900', marginTop: 2 },
+  categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  categoryItem: { width: '48%', flexDirection: 'row', alignItems: 'center', backgroundColor: theme.card, padding: 12, borderRadius: 16, gap: 10 },
+  categoryIconBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: theme.border, alignItems: 'center', justifyContent: 'center' },
+  categoryName: { fontSize: 14, fontWeight: '600', color: theme.foreground },
+  categoryType: { fontSize: 11, color: theme.mutedForeground, marginTop: 1, textTransform: 'capitalize' },
+  manageBtn: { width: '100%', paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: theme.primary, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', marginTop: 12 },
+  manageBtnText: { fontSize: 14, fontWeight: 'bold', color: theme.primary },
 })

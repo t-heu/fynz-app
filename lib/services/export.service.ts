@@ -1,6 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
-import { Alert } from 'react-native'
 import { BackupRepository } from '../repositories/backup.repository'
 import { UsuarioService } from './usuario.service'
 
@@ -43,12 +42,12 @@ export const ExportService = {
           mimeType: 'application/json'
         })
       } else {
-        Alert.alert('Erro', 'Compartilhamento de arquivos não disponível neste dispositivo.')
+        throw new Error('Compartilhamento de arquivos não disponível neste dispositivo.');
       }
 
     } catch (err) {
       console.error('Erro ao exportar:', err)
-      Alert.alert('Erro', 'Ocorreu um problema ao gerar o arquivo de exportação.')
+      throw err
     }
   }
 }

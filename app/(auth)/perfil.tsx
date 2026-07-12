@@ -1,10 +1,10 @@
+import { useToast } from '@/contexts/ToastContext'
 import * as ImagePicker from 'expo-image-picker'
 import { useRouter } from 'expo-router'
 import { ArrowLeft, Camera } from 'lucide-react-native'
 import React, { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -21,6 +21,7 @@ import { UsuarioService } from '@/lib/services/usuario.service'
 export default function PerfilPage() {
   const router = useRouter()
   const colorScheme = useColorScheme()
+  const { showToast } = useToast();
   const isDark = colorScheme === 'dark'
 
   const [loading, setLoading] = useState(false)
@@ -68,7 +69,7 @@ export default function PerfilPage() {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync()
       
       if (!permissionResult.granted) {
-        Alert.alert('Permissão necessária', 'Precisamos de acesso às suas fotos para alterar o avatar.')
+        showToast('error', 'Permissão necessária', 'Precisamos de acesso às suas fotos para alterar o avatar.')
         return
       }
 
@@ -94,10 +95,10 @@ export default function PerfilPage() {
       const newAvatarUrl = await AvatarService.uploadProfilePhoto(fileMock, userId)
       setAvatarUrl(newAvatarUrl || pickedAsset.uri)
 
-      Alert.alert('Sucesso', 'Foto atualizada com sucesso!')
+      showToast('success', 'Foto atualizada com sucesso!', 'Sucesso')
     } catch (error) {
       console.error(error)
-      Alert.alert('Erro', 'Erro ao atualizar a foto.')
+      showToast('error', 'Erro ao atualizar a foto.', 'Erro')
     } finally {
       setLoading(false)
     }
@@ -108,10 +109,10 @@ export default function PerfilPage() {
       setLoading(true)
       await AvatarService.removeProfilePhoto()
       setAvatarUrl('')
-      Alert.alert('Sucesso', 'Foto removida com sucesso!')
+      showToast('success', 'Foto removida com sucesso!', 'Sucesso')
     } catch (error) {
       console.error(error)
-      Alert.alert('Erro', 'Erro ao remover a foto.')
+      showToast('error', 'Erro ao remover a foto.', 'Erro')
     } finally {
       setLoading(false)
     }
@@ -121,9 +122,10 @@ export default function PerfilPage() {
     try {
       setLoading(true)
       await UsuarioService.updateProfileName(fullName)
-      Alert.alert('Sucesso', 'Nome atualizado com sucesso!')
-    } catch {
-      Alert.alert('Erro', 'Erro ao atualizar o nome.')
+      showToast('success', 'Nome atualizado com sucesso!', 'Sucesso')
+    } catch (error) {
+      console.error(error)
+      showToast('error', 'Erro ao atualizar o nome.', 'Erro')
     } finally {
       setLoading(false)
     }

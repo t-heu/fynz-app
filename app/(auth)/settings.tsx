@@ -11,7 +11,9 @@ import {
   FileText,
   HelpCircle,
   LogOut,
-  Palette, Shield,
+  Palette,
+  RotateCcw,
+  Shield,
   Star,
   Trash2,
   User,
@@ -33,6 +35,7 @@ import {
 
 import { ConfirmModal } from "@/components/ui/ConfirmModal"
 
+import AppWalkthrough, { clearAllTutorialProgress } from '@/components/AppWalkthrough'
 import { AssinaturaService } from '@/lib/services/assinatura.service'
 import { AuthService } from '@/lib/services/auth.service'
 import { BackupService } from '@/lib/services/backup.service'
@@ -209,6 +212,19 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleResetTutorial() {
+    // Limpa o progresso do tutorial
+    await clearAllTutorialProgress();
+
+    // Exibe uma mensagem de sucesso
+    //showToast('success', 'Tutorial reativado! Redirecionando...');
+
+    setTimeout(() => {
+      router.replace('/(tabs)/dashboard?restartTour=1');
+      // ou router.push('/(auth)/dashboard?restartTour=1');
+    }, 1500);
+  }
+
   // Componentes Auxiliares (Renderizados dentro do arquivo para usar as cores do tema facilmente)
   const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
     <View style={styles.sectionContainer}>
@@ -379,6 +395,7 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="Privacidade e Dados">
+        <Item title="Ver Tutorial Novamente" description="Reative o passo a passo de todas as telas" icon={<RotateCcw size={18} color={themeColors.text} />} onClick={() => handleResetTutorial()} />
         <Item title="Exportar meus dados" description="Baixar uma cópia em CSV" icon={<Download size={18} color={themeColors.text} />} onClick={() => ExportService.exportarDadosCSV()} />
         <Item title="Excluir minha conta" description="Remove permanentemente sua conta" danger icon={<UserX size={18} color={themeColors.danger} />} onClick={() => setShowDeleteAccModal(true)} />
       </Section>
@@ -416,6 +433,8 @@ export default function SettingsPage() {
         onCancel={() => setShowDeleteAccModal(false)}
         onConfirm={UsuarioService.excluirConta}
       />
+
+      <AppWalkthrough />
     </ScrollView>
   )
 }

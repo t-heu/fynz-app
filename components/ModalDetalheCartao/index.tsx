@@ -6,11 +6,12 @@ import { COLORS } from "@/lib/colors"
 import { fm, MESES } from '@/lib/finance-utils'
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Circle, CreditCard, Star } from 'lucide-react-native'
 import React, { useState } from 'react'
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 import { ModalFullscreen } from '../ui/ModalFullscreen'
 
 // Modais e Hooks Externos
+import { useToast } from "@/contexts/ToastContext"
 import { useCartaoFatura } from '../../hooks/use-cartao-fatura'
 import { FormLancamento } from '../FormLancamento'
 import { SheetConfirmacaoData } from './SheetConfirmacaoData'
@@ -23,6 +24,7 @@ interface Props {
 
 export function ModalDetalheCartao({ cartao, onClose }: Props) {
   const { dados } = useFinance()
+  const { showToast } = useToast();
   const colorScheme = useColorScheme()
   const currentTheme = colorScheme === 'dark' ? COLORS.dark : COLORS.light
   const styles = getStyles(currentTheme)
@@ -48,7 +50,7 @@ export function ModalDetalheCartao({ cartao, onClose }: Props) {
 
   function iniciarPagamento() {
     if (despesasAbertas.length === 0) {
-      Alert.alert('Aviso', 'Não há gastos pendentes para quitar neste mês.')
+      showToast('alert', 'Não há gastos pendentes para quitar neste mês.', 'Aviso')
       return
     }
     setShowPagar(true)

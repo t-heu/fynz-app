@@ -1,25 +1,43 @@
-import { useColorScheme } from '@/hooks/use-color-scheme'
-import { ArrowDownRight, ArrowUpRight, Plus, Settings, Target, Trophy } from 'lucide-react-native'
-import React, { useState } from 'react'
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ArrowDownRight, ArrowUpRight, Plus, Settings, Target, Trophy } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react'; // Inclua useEffect e useRef
+import { DeviceEventEmitter, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'; // Atualize o import
 
-import { useFinance } from '@/contexts/FinanceContext'
-import { fm } from '@/lib/finance-utils'
-import type { Meta } from '@/lib/types'
+import { useFinance } from '@/contexts/FinanceContext';
+import { fm } from '@/lib/finance-utils';
+import type { Meta } from '@/lib/types';
 
-import { COLORS } from "@/lib/colors"
-import { FormMeta } from './finance/FormMeta'
-import { FormMoverMeta } from './finance/FormMoverMeta'
-import { ModalFullscreen } from './ui/ModalFullscreen'
+import { COLORS } from "@/lib/colors";
+import { FormMeta } from './finance/FormMeta';
+import { FormMoverMeta } from './finance/FormMoverMeta';
+import { ModalFullscreen } from './ui/ModalFullscreen';
 
 export default function TabMetas() {
-  const { dados } = useFinance()
+  const { dados, activeTab } = useFinance()
   const colorScheme = useColorScheme()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editandoMeta, setEditandoMeta] = useState<Meta | null>(null)
   const [detalheMeta, setDetalheMeta] = useState<Meta | null>(null)
   const [moverMeta, setMoverMeta] = useState<{ meta: Meta; tipo: 'Guardar' | 'Resgatar' } | null>(null)
+
+  const novaMetaRef = useRef<any>(null); // Referência para o botão
+  
+  // 2. Adicione o listener do tour
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tour-request-target', ({ activeTab: currentTab, stepIndex }) => {
+      if (currentTab !== 'metas') return;
+
+      // Se for o passo 1 (ajuste o índice conforme necessário)
+      if (stepIndex === 1) {
+        novaMetaRef.current?.measureInWindow((x: number, y: number, width: number, height: number) => {
+          DeviceEventEmitter.emit('tour-target-position', { x, y, width, height, stepIndex });
+        });
+      }
+    });
+
+    return () => sub.remove();
+  }, [activeTab]);
 
   function abrirDetalhe(m: Meta) {
     setDetalheMeta(m)
@@ -54,7 +72,7 @@ export default function TabMetas() {
         </View>
 
         {/* Lista de metas */}
-        <View style={styles.listContainer}>
+        <View style={styles.listContainer} ref={novaMetaRef}>
           {metas.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIcon}>

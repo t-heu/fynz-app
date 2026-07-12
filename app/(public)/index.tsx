@@ -122,6 +122,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 20,
     paddingBottom: 40,
+    marginBottom: 20,
   },
   
   // --- GRÁFICO CENTRAL ---

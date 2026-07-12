@@ -5,8 +5,9 @@ import { COLORS } from '@/lib/colors'
 import { aplicarMascaraMoeda, dtISO, fm, lerValorMoeda, processarSaldoConta } from '@/lib/finance-utils'
 import { ArrowDown, ArrowDownRight, ArrowUpRight, Building2, Target } from 'lucide-react-native'
 import React, { useEffect, useMemo, useState } from 'react'
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
+import { useToast } from "@/contexts/ToastContext"
 import { ModalFullscreen } from '../ui/ModalFullscreen'
 
 interface MovMetaProps {
@@ -19,6 +20,7 @@ interface MovMetaProps {
 export function FormMoverMeta({ open, onClose, meta, tipoInicial = 'Guardar' }: MovMetaProps) {
   const { dados, salvar } = useFinance()
   const colorScheme = useColorScheme()
+  const { showToast } = useToast();
   const currentTheme = colorScheme === 'dark' ? COLORS.dark : COLORS.light
   const styles = getStyles(currentTheme)
 
@@ -38,8 +40,12 @@ export function FormMoverMeta({ open, onClose, meta, tipoInicial = 'Guardar' }: 
   function salvar_() {
     if (!meta) return
     const v = lerValorMoeda(valorStr)
-    if (v <= 0) return Alert.alert('Aviso', 'Por favor, introduza um valor válido.')
-    
+
+    if (v <= 0) {
+      showToast('alert', 'Por favor, introduza um valor válido.', 'Aviso')
+      return 
+    }
+
     const novosDados = { ...dados, lancamentos: [...dados.lancamentos], metas: [...dados.metas] }
     const metaAtual = novosDados.metas.find((x: any) => x.id === meta.id)
     if (!metaAtual) return
@@ -60,7 +66,11 @@ export function FormMoverMeta({ open, onClose, meta, tipoInicial = 'Guardar' }: 
         movimentoMeta: 'Guardar' 
       })
     } else {
-      if (v > metaAtual.depositado) return Alert.alert('Erro', 'Saldo insuficiente no cofrinho.')
+      if (v > metaAtual.depositado) {
+        showToast('alert', 'Saldo insuficiente no cofrinho.', 'Erro')
+        return
+      }
+      
       processarSaldoConta(novosDados, metaAtual.contaId, v, 'Receita')
       metaAtual.depositado -= v
       novosDados.lancamentos.push({ 

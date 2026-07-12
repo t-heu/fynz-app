@@ -1,12 +1,13 @@
 import { ModalManual } from '@/components/ui/ModalManual'
 import { APP_URL } from "@/constants/vars"
 import { useFinance } from '@/contexts/FinanceContext'
+import { useToast } from '@/contexts/ToastContext'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { COLORS } from "@/lib/colors"
 import { aplicarMascaraMoeda, fm, lerValorMoeda } from '@/lib/finance-utils'
 import { Building2, CheckCircle2, ChevronLeft, Eye, EyeOff } from 'lucide-react-native'
 import React, { useEffect, useMemo, useState } from 'react'
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
 interface Props {
   open: boolean
@@ -22,6 +23,7 @@ interface Props {
 
 export function SheetPagamentoFatura({ open, onClose, despesasAbertas, cartao, onConfirmClick }: Props) {
   const { dados } = useFinance()
+  const { showToast } = useToast();
   const colorScheme = useColorScheme()
   const currentTheme = colorScheme === 'dark' ? COLORS.dark : COLORS.light
   const styles = getStyles(currentTheme)
@@ -81,10 +83,21 @@ export function SheetPagamentoFatura({ open, onClose, despesasAbertas, cartao, o
   }
 
   function handleConfirmar() {
-    if (itensSelecionados.length === 0) return Alert.alert('Aviso', 'Selecione pelo menos um gasto para quitar.')
+    if (itensSelecionados.length === 0) {
+      showToast('alert', 'Selecione pelo menos um gasto para quitar.', 'Aviso')
+      return
+    }
     const vFinal = lerValorMoeda(valorPersonalizado)
-    if (vFinal <= 0) return Alert.alert('Aviso', 'O valor a quitar é inválido.')
-    if (!origemPagamento) return Alert.alert('Aviso', 'Selecione uma origem de pagamento.')
+
+    if (vFinal <= 0) {
+      showToast('alert', 'O valor a quitar é inválido.', 'Aviso')
+      return
+    }
+    
+    if (!origemPagamento) {
+      showToast('alert', 'Selecione uma origem de pagamento.', 'Aviso')
+      return
+    }
     
     onConfirmClick({ itensSelecionados, valorPersonalizado, origemPagamento })
   }

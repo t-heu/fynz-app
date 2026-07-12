@@ -22,6 +22,7 @@ const theme = {
   primary: '#8a05be',
   text: '#FFFFFF',
   muted: '#888888',
+  destructive: '#EF4444',
   inputBg: 'rgba(255, 255, 255, 0.05)',
   border: 'rgba(255, 255, 255, 0.1)',
 };
@@ -31,12 +32,14 @@ export default function LoginPage() {
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [erro, setErro] = useState('');
 
   async function entrar() {
     setLoading(true);
     try {
       await AuthService.login({ email, senha });
     } catch (err: any) {
+      setErro(err.message || 'Ocorreu um erro ao tentar realizar o cadastro.'); 
       setLoading(false);
     }
   }
@@ -51,7 +54,7 @@ export default function LoginPage() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Header com botão voltar minimalista */}
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/')}>
           <ChevronLeft color="#fff" size={24} />
         </TouchableOpacity>
 
@@ -91,6 +94,13 @@ export default function LoginPage() {
               {mostrarSenha ? <Eye size={20} color={theme.muted} /> : <EyeOff size={20} color={theme.muted} />}
             </TouchableOpacity>
           </View>
+
+          {/* ERRO */}
+          {!!erro && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{erro}</Text>
+            </View>
+          )}
 
           <TouchableOpacity style={styles.forgotButton} onPress={() => router.push('/esqueci-senha')}>
             <Text style={styles.forgotText}>Esqueci minha senha</Text>
@@ -141,5 +151,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   registerLink: { alignItems: 'center', marginTop: 32 },
-  registerText: { color: theme.muted, fontSize: 16 }
+  registerText: { color: theme.muted, fontSize: 16 },
+  errorContainer: { backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.2)' },
+  errorText: { color: theme.destructive, textAlign: 'center', fontSize: 14 },
 });

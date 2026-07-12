@@ -66,14 +66,14 @@ export const UsuarioService = {
                 await UsuarioRepository.deletarContaApi(userId)
                 await AuthService.logout(true)
               } catch (err: any) {
-                Alert.alert('Erro', err.message || 'Erro ao excluir conta.')
+                throw err
               }
             }
           }
         ]
       )
     } catch (err: any) {
-      Alert.alert('Erro', err.message || 'Não foi possível verificar seu status.')
+      throw err
     }
   }
 }

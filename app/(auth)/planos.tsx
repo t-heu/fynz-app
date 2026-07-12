@@ -1,7 +1,6 @@
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { AssinaturaService } from '@/lib/services/assinatura.service';
 import { AuthService } from '@/lib/services/auth.service';
-import { UsuarioService } from '@/lib/services/usuario.service';
 import type { Assinatura } from '@/lib/types';
 import { useRouter } from 'expo-router';
 import {
@@ -9,14 +8,11 @@ import {
   CheckCircle2,
   HeartCrack,
   LogOut,
-  Shield,
-  Star,
-  Zap
+  Star
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Linking,
   ScrollView,
   StyleSheet,
@@ -40,7 +36,6 @@ export default function PlanosPage() {
   const isDark = colorScheme === 'dark'
 
   const [loading, setLoading] = useState(true)
-  const [loadingCheck, setLoadingCheck] = useState<string | null>(null)
   const [plano, setPlano] = useState<DadosUsuario | null>(null)
   const [statusPlano, setStatusPlano] = useState<boolean>(false)
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -73,71 +68,8 @@ export default function PlanosPage() {
     loadData()
   }, [])
 
-  async function iniciarAssinatura(priceId: string) {
-    try {
-      setLoadingCheck(priceId)
-      
-      const user = await UsuarioService.getDadosUsuario()
-      
-      if (!user) {
-        Alert.alert('Atenção', 'Você precisa estar logado para assinar.')
-        return
-      }
-
-      // IMPORTANTE: Trocar para a URL cheia do seu backend se não estiver rodando rotas de API no próprio Expo Router
-      const response = await fetch('https://seu-dominio.com/api/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceId: priceId,
-          userId: user.id,
-          userEmail: user.email
-        })
-      })
-
-      const dados = await response.json()
-
-      if (dados.url) {
-        // Abre o link do Stripe no navegador do celular
-        await Linking.openURL(dados.url)
-      } else {
-        Alert.alert('Erro', 'Erro ao gerar pagamento: ' + dados.error)
-      }
-    } catch (error) {
-      console.error('Erro:', error)
-      Alert.alert('Erro', 'Erro ao conectar com o provedor de pagamento.')
-    } finally {
-      setLoadingCheck(null)
-    }
-  }
-
   async function abrirPortal() {
-    try {
-      const user = await UsuarioService.getDadosUsuario()
-      if (!user) return
-
-      const response = await fetch('https://seu-dominio.com/api/stripe/portal', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-        }),
-      })
-
-      const data = await response.json()
-      
-      if (data.url) {
-        await Linking.openURL(data.url)
-      } else {
-        Alert.alert('Erro', 'Algo deu errado!')
-      }
-    } catch (error) {
-      Alert.alert('Erro', 'Erro ao conectar ao portal.')
-    }
+    Linking.openURL('https://fynz.dev.br/login')
   }
 
   // Definição de cores base do tema para substituir o CSS customizado
@@ -240,7 +172,7 @@ export default function PlanosPage() {
 
             {plano?.assinatura?.plano_ativo === 'premium' ? (
               <TouchableOpacity onPress={abrirPortal} style={styles.primaryButton}>
-                <Text style={styles.primaryButtonText}>Gerenciar Assinatura</Text>
+                <Text style={styles.primaryButtonText}>Gerenciar assinatura no site</Text>
               </TouchableOpacity>
             ) : plano?.assinatura?.plano_ativo === 'vitalicio' ? (
               <Text style={styles.statusTextGreen}>Plano vitalício ativo</Text>
@@ -262,80 +194,109 @@ export default function PlanosPage() {
             </Text>
           </View>
 
-          <View style={styles.plansGap}>
-            
-            {/* PLANO MENSAL */}
-            <View style={[styles.planCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <View style={styles.cardHeaderRow}>
-                <Text style={[styles.planTitle, { color: theme.text }]}>
-                  <Shield size={20} color="#94a3b8" /> Mensal
+          <View style={styles.content}>
+            <View style={styles.centerTextContainer}>
+
+              <View style={styles.badgeTrialEnded}>
+                <Star size={16} color="#c084fc" />
+                <Text style={styles.badgeTrialEndedText}>
+                  Fynz Premium
                 </Text>
-              </View>
-              <Text style={styles.planDescription}>Acesso completo com cobrança mensal.</Text>
-              <Text style={[styles.planPrice, { color: theme.text }]}>R$ 5,99<Text style={styles.planPeriod}> /mês</Text></Text>
-              
-              <View style={styles.featuresList}>
-                <Text style={[styles.featureItem, { color: theme.mutedText }]}>✓ Acesso a todas as ferramentas</Text>
-                <Text style={[styles.featureItem, { color: theme.mutedText }]}>✓ Relatórios e categorias liberadas</Text>
               </View>
 
-              <TouchableOpacity 
-                onPress={() => iniciarAssinatura(process.env.EXPO_PUBLIC_STRIPE_PLAN_MENSAL as string)}
-                disabled={loadingCheck !== null}
-                style={[styles.buttonSecondary, { backgroundColor: isDark ? '#27272a' : '#e4e4e7' }]}
+              <Text style={[styles.mainTitle, { color: theme.text }]}>
+                Desbloqueie todos os recursos
+              </Text>
+
+              <Text
+                style={[
+                  styles.subtitle,
+                  {
+                    color: theme.mutedText,
+                    textAlign: 'center'
+                  }
+                ]}
               >
-                <Text style={[styles.buttonSecondaryText, { color: theme.text }]}>
-                  {loadingCheck === process.env.EXPO_PUBLIC_STRIPE_PLAN_MENSAL ? 'Processando...' : 'Assinar'}
-                </Text>
-              </TouchableOpacity>
+                Gerencie suas finanças com recursos avançados.
+                O gerenciamento da assinatura é realizado pelo
+                portal oficial do Fynz.
+              </Text>
+
             </View>
 
-            {/* PLANO SEMESTRAL */}
-            <View style={[styles.planCard, { backgroundColor: '#1e1b4b', borderColor: '#9333ea', borderWidth: 1.5 }]}>
-              <View style={styles.popularBadge}><Text style={styles.popularBadgeText}>Mais Popular</Text></View>
-              <Text style={styles.planTitleLight}><Star size={20} color="#c084fc" /> Semestral</Text>
-              <Text style={styles.planDescriptionLight}>Economize com o plano semestral.</Text>
-              <Text style={styles.planPriceLight}>R$ 4,98<Text style={styles.planPeriodLight}> /mês</Text></Text>
-              <Text style={styles.billingDetailLight}>Cobrado R$ 29,90 a cada 6 meses</Text>
+            <View
+              style={[
+                styles.planCard,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.border
+                }
+              ]}
+            >
+
+              <Text
+                style={[
+                  styles.planTitle,
+                  {
+                    color: theme.text,
+                    marginBottom: 20
+                  }
+                ]}
+              >
+                Recursos Premium
+              </Text>
 
               <View style={styles.featuresList}>
-                <Text style={styles.featureItemLight}>✓ Tudo do plano mensal</Text>
-                <Text style={styles.featureItemLight}>✓ Economia de 17% ao ano</Text>
+                <Text style={[styles.featureItem, { color: theme.mutedText }]}>
+                  ✓ Contas ilimitadas
+                </Text>
+
+                <Text style={[styles.featureItem, { color: theme.mutedText }]}>
+                  ✓ Cartões ilimitados
+                </Text>
+
+                <Text style={[styles.featureItem, { color: theme.mutedText }]}>
+                  ✓ Categorias ilimitadas
+                </Text>
+
+                <Text style={[styles.featureItem, { color: theme.mutedText }]}>
+                  ✓ Metas financeiras
+                </Text>
+
+                <Text style={[styles.featureItem, { color: theme.mutedText }]}>
+                  ✓ Backup na nuvem
+                </Text>
+
+                <Text style={[styles.featureItem, { color: theme.mutedText }]}>
+                  ✓ Exportação de dados
+                </Text>
+
+                <Text style={[styles.featureItem, { color: theme.mutedText }]}>
+                  ✓ Relatórios completos
+                </Text>
               </View>
 
-              <TouchableOpacity 
-                onPress={() => iniciarAssinatura(process.env.EXPO_PUBLIC_STRIPE_PLAN_SEMESTRAL as string)}
-                disabled={loadingCheck !== null}
+              <Text
+                style={{
+                  marginTop: 24,
+                  marginBottom: 16,
+                  textAlign: 'center',
+                  color: theme.mutedText,
+                  fontSize: 13
+                }}
+              >
+                A assinatura é gerenciada pelo portal web do Fynz.
+              </Text>
+
+              <TouchableOpacity
                 style={styles.buttonPurple}
+                onPress={() => Linking.openURL('https://fynz.dev.br/login')}
               >
                 <Text style={styles.buttonPurpleText}>
-                  {loadingCheck === process.env.EXPO_PUBLIC_STRIPE_PLAN_SEMESTRAL ? 'Processando...' : 'Assinar'}
+                  Abrir portal do Fynz
                 </Text>
               </TouchableOpacity>
-            </View>
 
-            {/* PLANO ANUAL */}
-            <View style={[styles.planCard, { backgroundColor: '#064e3b', borderColor: '#10b981', borderWidth: 1.5 }]}>
-              <View style={[styles.popularBadge, { backgroundColor: '#10b981' }]}><Text style={styles.popularBadgeText}>Melhor Valor</Text></View>
-              <Text style={styles.planTitleLight}><Zap size={20} color="#34d399" /> Anual</Text>
-              <Text style={styles.planDescriptionLight}>Economize ainda mais com o plano anual.</Text>
-              <Text style={styles.planPriceLight}>R$ 4,15<Text style={styles.planPeriodLight}> /mês</Text></Text>
-              <Text style={styles.billingDetailLight}>Cobrado R$ 49,90 por ano</Text>
-
-              <View style={styles.featuresList}>
-                <Text style={styles.featureItemLight}>✓ Tudo do plano semestral</Text>
-                <Text style={styles.featureItemLight}>✓ Economia de 30% ao ano</Text>
-              </View>
-
-              <TouchableOpacity 
-                onPress={() => iniciarAssinatura(process.env.EXPO_PUBLIC_STRIPE_PLAN_ANUAL as string)}
-                disabled={loadingCheck !== null}
-                style={styles.buttonGreen}
-              >
-                <Text style={styles.buttonGreenText}>
-                  {loadingCheck === process.env.EXPO_PUBLIC_STRIPE_PLAN_ANUAL ? 'Processando...' : 'Assinar'}
-                </Text>
-              </TouchableOpacity>
             </View>
 
           </View>

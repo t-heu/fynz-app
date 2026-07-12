@@ -1,3 +1,4 @@
+import { useToast } from '@/contexts/ToastContext'
 import { getPasswordStrength } from '@/lib/finance-utils'
 import { AuthService } from '@/lib/services/auth.service'
 import { Ionicons } from '@expo/vector-icons'
@@ -5,7 +6,6 @@ import { useRouter } from 'expo-router'
 import React, { useState } from 'react'
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
@@ -14,13 +14,14 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native'
 
 const { height } = Dimensions.get('window');
 
 export default function RedefinirSenhaPage() {
   const router = useRouter()
+  const { showToast } = useToast();
 
   const [senha, setSenha] = useState('')
   const [confirmarSenha, setConfirmarSenha] = useState('')
@@ -71,10 +72,10 @@ export default function RedefinirSenhaPage() {
 
       await AuthService.updatePassword(senha)
 
-      // No Mobile, usamos o Alert nativo ao invés do alert do navegador
-      Alert.alert('Sucesso', 'Senha atualizada com sucesso!', [
-        { text: 'OK', onPress: () => router.push('/login') }
-      ])
+      showToast('success', 'Senha atualizada com sucesso!', 'Sucesso');
+      setTimeout(() => {
+        router.push('/login');
+      }, 1000);
     } catch (err: any) {
       setErro(err.message)
     } finally {

@@ -5,9 +5,9 @@ import { CATEGORIA_ICONS } from '@/lib/categoria-icons'
 import { COLORS } from '@/lib/colors'
 import { dtISO, fm, formatMesAno, processarSaldoConta } from '@/lib/finance-utils'
 import type { Lancamento } from '@/lib/types'
-import { AlertTriangle, Calendar, ChevronLeft, ChevronRight, Circle, CircleDollarSign, Lock, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react-native'
-import React, { useState } from 'react'
-import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { AlertTriangle, Calendar, ChevronLeft, ChevronRight, Circle, CircleDollarSign, Lock, Plus, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react-native'
+import React, { useEffect, useRef, useState } from 'react'
+import { DeviceEventEmitter, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
 interface Props {
   abrirLancamento?: number | null
@@ -15,11 +15,10 @@ interface Props {
 }
 
 export default function TabLancamentos({ abrirLancamento, onAbrirLancamentoClear }: Props) {
-  const { dados, salvar, dataAtualView, mudarMes } = useFinance()
+  const { dados, salvar, dataAtualView, mudarMes, activeTab } = useFinance()
   const colorScheme = useColorScheme()
   const currentTheme = colorScheme === 'dark' ? COLORS.dark : COLORS.light
   const styles = getStyles(currentTheme)
-
   const [editandoId, setEditandoId] = useState<number | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [filtroPago, setFiltroPago] = useState<'todos' | 'pagos' | 'pendentes'>('todos')
@@ -27,6 +26,45 @@ export default function TabLancamentos({ abrirLancamento, onAbrirLancamentoClear
   const [antecipacao, setAntecipacao] = useState<{ id: number; dataPagamento: string } | null>(null)
   const [modalExclusao, setModalExclusao] = useState<{ id: number; grupoId?: number } | null>(null)
   const [alertaBloqueio, setAlertaBloqueio] = useState(false)
+  
+  // Referências para o Walkthrough Dinâmico
+  const scrollViewRef = useRef<ScrollView>(null)
+  const resumoRef = useRef<View>(null)
+  const filtrosRef = useRef<View>(null)
+  const fabRef = useRef<any>(null)
+
+  // Escuta os pedidos de medição para a aba de Lançamentos
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('tour-request-target', ({ activeTab: currentTab, stepIndex }) => {
+      if (currentTab !== 'lancamentos') return;
+
+      let targetRef: React.RefObject<any> | null = null;
+
+      // Mapeamento dos passos correspondentes à TabLancamentos
+      if (stepIndex === 1) targetRef = resumoRef;      // Visão Geral do Mês
+      else if (stepIndex === 2) targetRef = filtrosRef; // Filtros Inteligentes
+      else if (stepIndex === 3) targetRef = fabRef;     // Novo Lançamento (FAB)
+
+      if (!targetRef) {
+        DeviceEventEmitter.emit('tour-target-position', null);
+        return;
+      }
+
+      // Se for o FAB ou filtros, garante scroll no topo ou executa direto
+      if (stepIndex === 1 || stepIndex === 2) {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      }
+
+      // Aguarda o scroll estabilizar brevemente para obter as coordenadas reais na tela
+      setTimeout(() => {
+        targetRef?.current?.measureInWindow((x: number, y: number, width: number, height: number) => {
+          DeviceEventEmitter.emit('tour-target-position', { x, y, width, height, stepIndex });
+        });
+      }, 300);
+    });
+
+    return () => sub.remove();
+  }, [activeTab]);
   
   const hoje = dtISO()
   const mF = dataAtualView.getMonth()
@@ -278,9 +316,9 @@ export default function TabLancamentos({ abrirLancamento, onAbrirLancamentoClear
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollViewRef} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         {/* PAINEL DE RESUMO OTIMIZADO (GRID 2x2 NO MOBILE) */}
-        <View style={styles.summaryCard}>
+        <View ref={resumoRef} style={styles.summaryCard}>
           {/* Linha 1 */}
           <View style={[styles.summaryCol, styles.borderBottom, styles.borderRight]}>
             <Text style={styles.summaryLabel}>Entradas</Text>
@@ -310,7 +348,7 @@ export default function TabLancamentos({ abrirLancamento, onAbrirLancamentoClear
         </View>
 
         {/* FILTROS SEGMENTADOS */}
-        <View style={styles.filterPillsContainer}>
+        <View ref={filtrosRef} style={styles.filterPillsContainer}>
           <View style={styles.filterPillsRow}>
             {[
               { key: 'todos', label: 'Todos' },
@@ -566,6 +604,15 @@ export default function TabLancamentos({ abrirLancamento, onAbrirLancamentoClear
         </View>
       </Modal>
 
+      {/* BOTÃO FLUTUANTE */}
+      <TouchableOpacity
+        ref={fabRef}
+        onPress={() => setFormOpen(true)}
+        style={styles.fab}
+      >
+        <Plus size={28} color="#fff" />
+      </TouchableOpacity>
+
       <FormLancamento
         open={formOpen || abrirLancamento != null}
         onClose={() => {
@@ -583,6 +630,19 @@ const getStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.background,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    alignSelf: 'center',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#8b5cf6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    zIndex: 99,
   },
   monthPickerRow: {
     flexDirection: 'row',

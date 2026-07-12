@@ -1,13 +1,15 @@
 import { ModalManual } from '@/components/ui/ModalManual'
 import { APP_URL } from "@/constants/vars"
 import { useFinance } from '@/contexts/FinanceContext'
+import { useToast } from '@/contexts/ToastContext'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { bancos } from '@/lib/bancos'
 import { COLORS } from "@/lib/colors"
 import { aplicarMascaraMoeda, fm, lerValorMoeda } from '@/lib/finance-utils'
 import { Building2, Check, ChevronLeft, Pencil, Plus, Search, Trash2 } from 'lucide-react-native'
 import React, { useEffect, useMemo, useState } from 'react'
-import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ConfirmModal } from '../ui/ConfirmModal'
 
 interface Props {
   open: boolean
@@ -19,9 +21,11 @@ interface Props {
 export function FormConta({ open, onClose, editando, onSaved }: Props) {
   const { dados, salvar } = useFinance()
   const colorScheme = useColorScheme()
+  const { showToast } = useToast();
   const currentTheme = colorScheme === 'dark' ? COLORS.dark : COLORS.light
   const styles = getStyles(currentTheme)
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [nome, setNome] = useState('')
   const [icone, setIcone] = useState('')
   const [saldoStr, setSaldoStr] = useState('')
@@ -52,7 +56,11 @@ export function FormConta({ open, onClose, editando, onSaved }: Props) {
   }, [buscaBanco])
 
   function salvarConta() {
-    if (!nome.trim()) return Alert.alert('Aviso', 'Digite o nome da conta!')
+    if (!nome.trim()) {
+      showToast('alert', 'Digite o nome da conta!', 'Aviso')
+      return
+    }
+
     let s = lerValorMoeda(saldoStr)
     if (negativo) s = -s
 
@@ -105,23 +113,10 @@ export function FormConta({ open, onClose, editando, onSaved }: Props) {
   }
 
   function excluir() {
-    Alert.alert(
-      'Confirmar Exclusão',
-      'Tem certeza que deseja apagar esta conta?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Apagar',
-          style: 'destructive',
-          onPress: () => {
-            const novosDados = { ...dados, contas: dados.contas.filter((x: any) => x.id !== editando!.id) }
-            salvar(novosDados)
-            onClose()
-            onSaved?.()
-          }
-        }
-      ]
-    )
+    const novosDados = { ...dados, contas: dados.contas.filter((x: any) => x.id !== editando!.id) }
+    salvar(novosDados)
+    onClose()
+    onSaved?.()
   }
 
   return (
@@ -268,12 +263,20 @@ export function FormConta({ open, onClose, editando, onSaved }: Props) {
 
           {/* Botão de Excluir */}
           {editando && (
-            <TouchableOpacity onPress={excluir} style={styles.deleteBtn}>
+            <TouchableOpacity onPress={() => setShowLogoutModal(true)} style={styles.deleteBtn}>
               <Text style={styles.deleteBtnText}>Excluir Conta</Text>
             </TouchableOpacity>
           )}
         </ScrollView>
       )}
+
+      <ConfirmModal 
+        visible={showLogoutModal}
+        title="Excluir Conta"
+        message="Tem certeza que deseja apagar esta conta?"
+        onCancel={() => setShowLogoutModal(false)}
+        onConfirm={excluir}
+      />
     </ModalManual>
   )
 }
